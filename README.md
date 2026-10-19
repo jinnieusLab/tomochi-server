@@ -4,14 +4,19 @@
 
 ## 기술 스택
 
-Spring Boot 4.1 · Java 21 · Gradle · springdoc OpenAPI
+Spring Boot 4.1 · Java 21 · Gradle · MySQL 8.4 · Redis 8 · Flyway · springdoc OpenAPI · Testcontainers
 
 ## 실행
 
 ```bash
 cp .env.example .env
+docker compose up -d
 ./gradlew bootRun
 ```
+
+- `docker compose up -d`로 MySQL(3307)·Redis(6380)를 띄워요. 로컬에 설치된 MySQL·Redis와 포트가 겹치지 않게 했어요.
+- 스키마는 Flyway(`src/main/resources/db/migration`)로만 바꿔요. Hibernate는 `validate`만 해요.
+- 테스트는 Testcontainers로 MySQL·Redis를 띄우니 Docker만 켜져 있으면 돼요 (`./gradlew test`).
 
 - 기본 프로필은 `local`이에요. 다른 프로필은 `SPRING_PROFILES_ACTIVE=dev`처럼 환경 변수로 정해요.
 - API 문서: http://localhost:8080/swagger-ui.html (`prod`에서는 꺼져 있어요)
