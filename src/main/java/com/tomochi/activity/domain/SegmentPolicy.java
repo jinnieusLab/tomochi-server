@@ -25,6 +25,8 @@ public final class SegmentPolicy {
 	public static final Duration MAX_LENGTH = Duration.ofHours(12);
 	public static final Duration DAILY_CAP = Duration.ofHours(20);
 	public static final int MAX_SEGMENTS_PER_REQUEST = 200;
+	/** 작업 구간·하루 요약을 남겨 두는 기간 (ACT-4가 지워요). 이보다 전 날은 조회하지 않아요. */
+	public static final int RETENTION_DAYS = 186;
 
 	/** ASCII 16진수만. {@code UUID.fromString}은 전각 숫자 같은 비ASCII 숫자도 받아들일 수 있어요. */
 	private static final Pattern UUID_FORMAT =
