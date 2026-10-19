@@ -1,6 +1,7 @@
 package com.tomochi.friend.controller;
 
 import com.tomochi.friend.dto.AddFriendRequest;
+import com.tomochi.friend.dto.FriendListResponse;
 import com.tomochi.friend.dto.FriendResponse;
 import com.tomochi.friend.error.FriendErrorCode;
 import com.tomochi.global.docs.ApiErrorCodes;
@@ -8,6 +9,7 @@ import com.tomochi.global.error.CommonErrorCode;
 import com.tomochi.global.security.AuthUser;
 import com.tomochi.global.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -24,4 +26,14 @@ public interface FriendApi {
 			codes = {"INVITE_CODE_NOT_FOUND", "OWN_INVITE_CODE", "FRIEND_LIMIT_EXCEEDED"})
 	@ApiErrorCodes(value = CommonErrorCode.class, codes = "INVALID_INPUT")
 	FriendResponse add(@CurrentUser AuthUser user, AddFriendRequest request);
+
+	@Operation(summary = "친구 목록", description = """
+			친구들과 지금 상태예요. 앱은 팝오버를 열 때와 열려 있는 동안 **30초마다** 불러요.
+			- `presence.status`: WORKING · RESTING · AWAY · OFFLINE. 작업 중이면 `workingSince`로 "작업 중 · 1시간 25분"을 계산해요
+			- 오프라인이면 `lastSeenAt`으로 "쉬는 중 · 3시간 전"을 보여줘요
+			- 숨긴 친구는 빠지고 `hiddenCount`만 와요. `includeHidden=true`면 숨긴 친구도 `hidden: true`로 와요
+			- 친구의 총 시간·받은 꾹 수는 주지 않아요 (비교하지 않아요)""")
+	@ApiResponse(responseCode = "200", description = "친구 목록")
+	FriendListResponse list(@CurrentUser AuthUser user,
+			@Parameter(description = "숨긴 친구도 포함할지", example = "false") boolean includeHidden);
 }
