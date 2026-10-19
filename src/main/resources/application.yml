@@ -47,6 +47,9 @@ spring:
 tomochi:
   auth:
     jwt-secret: ${JWT_SECRET}
+  app:
+    latest: ${APP_LATEST_VERSION:0.1.0}
+    minimum: ${APP_MINIMUM_VERSION:0.1.0}
 
 server:
   port: ${SERVER_PORT:8080}
