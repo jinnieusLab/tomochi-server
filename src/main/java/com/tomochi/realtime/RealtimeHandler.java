@@ -135,6 +135,7 @@ public class RealtimeHandler extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
 		sender.unregister(userId(session), session);
+		presenceService.disconnected(authUser(session));
 		ScheduledFuture<?>[] scheduled = timers.remove(session.getId());
 		if (scheduled != null) {
 			for (ScheduledFuture<?> future : scheduled) {

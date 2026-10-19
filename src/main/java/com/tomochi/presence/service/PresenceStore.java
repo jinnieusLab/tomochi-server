@@ -84,6 +84,11 @@ public class PresenceStore {
 		return since == null || since.isEmpty() ? null : Instant.ofEpochMilli(Long.parseLong(since));
 	}
 
+	/** 기기 하나의 상태를 지워요. 그 기기의 WebSocket이 끊겼을 때 90초를 기다리지 않고 오프라인으로 보이게요. */
+	public void remove(Long userId, String sessionId) {
+		redisTemplate.opsForHash().delete(KEY_PREFIX + userId, sessionId);
+	}
+
 	/** 지금 접속 중인 기기들의 아이콘을 바로 바꿔요. 다음 하트비트를 기다리지 않고 친구에게 보여요. */
 	public void changeIcon(Long userId, StatusIcon icon) {
 		redisTemplate.execute(CHANGE_ICON, List.of(KEY_PREFIX + userId), icon != null ? icon.name() : "");
