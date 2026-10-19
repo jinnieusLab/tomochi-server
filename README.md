@@ -27,6 +27,7 @@ docker compose up -d
 
 - [소셜 로그인 흐름과 OAuth 앱 등록](docs/oauth.md)
 - [Dev 배포](docs/deploy.md)
+- [모니터링·로그](docs/monitoring.md)
 
 ## 배포
 
