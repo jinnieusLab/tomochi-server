@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit PR 리뷰 설정. main으로 가는 PR을 자동으로 리뷰해요.
+language: ko-KR
+
+tone_instructions: >-
+  한국어로 짧고 구체적으로 말해 주세요. 문제가 있으면 왜 문제인지와 고치는 방법을 한두 문장으로 알려 주세요.
+  취향 차이인 스타일 지적보다 버그, 보안, 동시성, 데이터 정합성을 먼저 봐 주세요.
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: true
+  collapse_walkthrough: true
+  sequence_diagrams: true
+  poem: false
+  in_progress_fortune: false
+  suggested_labels: false
+  suggested_reviewers: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+
+  path_filters:
+    - "!gradle/wrapper/**"
+    - "!gradlew"
+    - "!gradlew.bat"
+    - "!**/build/**"
+
+  path_instructions:
+    - path: "src/main/java/**"
+      instructions: |
+        Spring Boot 4 · Java 21 백엔드예요. 다음을 중점으로 봐 주세요.
+        - 동시성: 같은 사용자의 요청이 동시에 와도 결과가 맞는지 (조건부 UPDATE, 유니크 제약, 행 잠금, Redis 원자 명령).
+          확인 후 쓰기(check-then-act)처럼 경쟁에 취약한 코드를 짚어 주세요.
+        - 트랜잭션 경계와 지연 로딩(open-in-view가 꺼져 있어요).
+        - 시간은 모두 UTC Instant로 다루고, 날짜 나누기만 사용자 시간대로 해요. LocalDateTime.now() 같은 시스템 시간대 의존을 짚어 주세요.
+          현재 시각은 Clock 빈으로 받아요.
+        - 오류는 BusinessException + 도메인별 ErrorCode로 던지고, 응답은 공통 ErrorResponse 형식이어야 해요.
+        - 제품 원칙: 랭킹·친구끼리 비교하는 API를 만들지 않아요. 친구의 총 시간·받은 꾹 수를 응답에 넣지 않아요.
+          입력 내용, 앱 이름, 창 제목은 받지도 저장하지도 않아요. 이 원칙에 어긋나는 변경은 꼭 알려 주세요.
+    - path: "src/main/java/com/tomochi/{auth,global/security}/**"
+      instructions: |
+        인증 코드예요. 토큰·코드·비밀값이 로그나 응답, URL에 새지 않는지, 비교는 시간이 일정한지(MessageDigest.isEqual),
+        1회용 값은 원자적으로 꺼내고 지우는지(GETDEL), 만료·폐기 검사가 빠지지 않았는지 봐 주세요.
+    - path: "src/main/resources/db/migration/**"
+      instructions: |
+        Flyway 마이그레이션이에요 (MySQL 8.4, InnoDB, utf8mb4, 시각은 DATETIME(6) UTC).
+        이미 main에 들어간 파일은 고치면 안 되고 새 버전 파일을 더해야 해요.
+        엔티티와 컬럼 타입·NULL 여부가 맞는지(ddl-auto는 validate), 조회 패턴에 맞는 인덱스·유니크 제약이 있는지 봐 주세요.
+    - path: "src/test/java/**"
+      instructions: |
+        테스트 이름은 한국어 메서드명이에요. 동시성 테스트는 실제로 경쟁이 일어나는지(동시 시작 래치),
+        통합 테스트는 Testcontainers로 다른 테스트와 데이터가 겹치지 않는지 봐 주세요.
+        스타일보다 빠진 경계 사례(만료, 재사용, 자정·시간대 경계)를 알려 주세요.
+    - path: "src/main/resources/application*.yml"
+      instructions: |
+        비밀값(DB 비밀번호, JWT 키, OAuth 시크릿)은 환경 변수로만 넣어야 해요. 기본값으로 비밀값이 들어가면 꼭 알려 주세요.
+        레포가 나중에 public이 돼서 커밋 히스토리에도 남으면 안 돼요.
+    - path: "{deploy/**,Dockerfile,.github/workflows/**}"
+      instructions: |
+        배포·CI 설정이에요. 비밀값이 로그에 찍히거나 이미지·레포에 들어가지 않는지, 권한(permissions)이 최소인지,
+        외부로 열리는 포트가 Nginx(80, 443) 말고는 없는지 봐 주세요.
+
+  tools:
+    gitleaks:
+      enabled: true
+    actionlint:
+      enabled: true
+    hadolint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    yamllint:
+      enabled: true
+    markdownlint:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: local
