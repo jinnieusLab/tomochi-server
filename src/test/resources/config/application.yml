@@ -1,0 +1,17 @@
+# 테스트에서만 쓰는 가짜 값. classpath:/config/application.yml은 기본 설정 위에 덧씌워져요.
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client
+            client-secret: test-google-secret
+          github:
+            client-id: test-github-client
+            client-secret: test-github-secret
+
+tomochi:
+  auth:
+    # 테스트 전용 키 (Base64, 48바이트)
+    jwt-secret: dGVzdC1vbmx5LWp3dC1zZWNyZXQtZm9yLXRvbW9jaGktc2VydmVyLXRlc3RzISE=
