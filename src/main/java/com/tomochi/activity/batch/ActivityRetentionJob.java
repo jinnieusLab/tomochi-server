@@ -36,7 +36,9 @@ public class ActivityRetentionJob {
 		// 사용자 시간대마다 "오늘"이 달라서, 하루 여유를 두고 UTC 기준으로 지워요.
 		int days = deleteDailyActivityBefore(LocalDate.ofInstant(now, ZoneOffset.UTC)
 				.minusDays(SegmentPolicy.RETENTION_DAYS + 1L));
-		log.info("오래된 활동 기록 정리: 구간 {}개, 하루 요약 {}개", segments, days);
+		int together = deleteInBatches("DELETE FROM together_daily WHERE date < ? LIMIT " + BATCH_SIZE,
+				LocalDate.ofInstant(now, ZoneOffset.UTC).minusDays(SegmentPolicy.RETENTION_DAYS + 1L));
+		log.info("오래된 활동 기록 정리: 구간 {}개, 하루 요약 {}개, 둘이 함께한 날 {}개", segments, days, together);
 	}
 
 	int deleteSegmentsEndedBefore(Instant cutoff) {

@@ -29,7 +29,8 @@ public class UnfriendService {
 				userId, friendId, friendId, userId);
 		jdbcTemplate.update("DELETE FROM squish WHERE (from_user_id = ? AND to_user_id = ?) OR (from_user_id = ? AND to_user_id = ?)",
 				userId, friendId, friendId, userId);
-		// 둘이 함께한 날(TGTR-1) 테이블이 생기면 여기서 같이 지워요.
+		jdbcTemplate.update("DELETE FROM together_daily WHERE (owner_id = ? AND friend_id = ?) OR (owner_id = ? AND friend_id = ?)",
+				userId, friendId, friendId, userId);
 		friendshipRepository.delete(friendship);
 	}
 }
