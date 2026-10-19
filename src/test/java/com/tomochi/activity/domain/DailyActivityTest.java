@@ -77,6 +77,71 @@ class DailyActivityTest {
 	}
 
 	@Test
+	void 초는_구간을_합친_뒤에_버린다() {
+		Instant base = DAY.atTime(10, 0).atZone(SEOUL).toInstant();
+		TimeRange a = new TimeRange(base, base.plusMillis(1500));
+		TimeRange b = new TimeRange(base.plusSeconds(10), base.plusSeconds(10).plusMillis(1500));
+
+		assertThat(DailyActivity.calculate(List.of(a, b), DAY, SEOUL, CAP).seconds()).isEqualTo(3);
+	}
+
+	@Test
+	void 서머타임_시작일은_23시간이고_건너뛴_칸은_비어_있다() {
+		LocalDate springForward = LocalDate.of(2026, 3, 8); // LA 02:00 → 03:00
+		TimeRange wholeDay = new TimeRange(springForward.atStartOfDay(LA).toInstant(),
+				springForward.plusDays(1).atStartOfDay(LA).toInstant());
+
+		DailyActivity day = DailyActivity.calculate(List.of(wholeDay), springForward, LA, Duration.ofHours(24));
+
+		assertThat(day.seconds()).isEqualTo(Duration.ofHours(23).toSeconds());
+		assertThat(day.slots().substring(4, 6)).isEqualTo("00"); // 02:00~03:00은 없는 시각
+		assertThat(day.slots().replace("0", "")).hasSize(46);
+		assertThat(day.slots().charAt(47)).isEqualTo('1');
+	}
+
+	@Test
+	void 서머타임_시작일_현지_3시_작업은_3시_칸이다() {
+		LocalDate springForward = LocalDate.of(2026, 3, 8);
+		TimeRange at3 = new TimeRange(springForward.atTime(3, 0).atZone(LA).toInstant(),
+				springForward.atTime(3, 20).atZone(LA).toInstant());
+
+		assertThat(DailyActivity.calculate(List.of(at3), springForward, LA, CAP).slots().indexOf('1')).isEqualTo(6);
+	}
+
+	@Test
+	void 서머타임_끝나는_날은_25시간이고_두_번_지나는_시간대도_같은_칸이다() {
+		LocalDate fallBack = LocalDate.of(2026, 11, 1); // LA 02:00 PDT → 01:00 PST
+		TimeRange wholeDay = new TimeRange(fallBack.atStartOfDay(LA).toInstant(),
+				fallBack.plusDays(1).atStartOfDay(LA).toInstant());
+
+		DailyActivity day = DailyActivity.calculate(List.of(wholeDay), fallBack, LA, Duration.ofHours(25));
+
+		assertThat(day.seconds()).isEqualTo(Duration.ofHours(25).toSeconds());
+		assertThat(day.slots()).isEqualTo("1".repeat(48));
+	}
+
+	@Test
+	void 서머타임_끝나는_날_두_번째_1시대_작업도_칠한다() {
+		// 두 번째 01:00~01:30 (PST) = UTC 09:00~09:30
+		TimeRange secondOneAm = new TimeRange(Instant.parse("2026-11-01T09:00:00Z"), Instant.parse("2026-11-01T09:20:00Z"));
+
+		DailyActivity day = DailyActivity.calculate(List.of(secondOneAm), LocalDate.of(2026, 11, 1), LA, CAP);
+
+		assertThat(day.slots().indexOf('1')).isEqualTo(2);
+		assertThat(day.slots().replace("0", "")).hasSize(1);
+		assertThat(day.slots().charAt(47)).isEqualTo('0');
+	}
+
+	@Test
+	void 서머타임_끝나는_날_마지막_23시_30분도_칸_안에_든다() {
+		LocalDate fallBack = LocalDate.of(2026, 11, 1);
+		TimeRange late = new TimeRange(fallBack.atTime(23, 40).atZone(LA).toInstant(),
+				fallBack.atTime(23, 50).atZone(LA).toInstant());
+
+		assertThat(DailyActivity.calculate(List.of(late), fallBack, LA, CAP).slots().charAt(47)).isEqualTo('1');
+	}
+
+	@Test
 	void 구간이_없으면_0() {
 		DailyActivity day = DailyActivity.calculate(List.of(), DAY, SEOUL, CAP);
 
