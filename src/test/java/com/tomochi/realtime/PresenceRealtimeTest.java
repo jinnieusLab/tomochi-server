@@ -50,18 +50,20 @@ class PresenceRealtimeTest {
 
 		presenceService.heartbeat(meOnMac, new PresenceRequest(PresenceStatus.WORKING, StatusIcon.CODE));
 
-		JsonNode changed = minjiClient.next();
+		JsonNode changed = minjiClient.next("presence.changed");
 		assertThat(changed.get("type").asString()).isEqualTo("presence.changed");
 		assertThat(changed.at("/data/friendId").asLong()).isEqualTo(me);
 		assertThat(changed.at("/data/status").asString()).isEqualTo("WORKING");
 		assertThat(changed.at("/data/icon").asString()).isEqualTo("CODE");
 
+		// 작업 시작 알림(friend.workStarted)까지 받아 둬요.
+		minjiClient.next("friend.workStarted");
 		presenceService.heartbeat(meOnMac, new PresenceRequest(PresenceStatus.WORKING, StatusIcon.CODE));
 		minjiClient.send("{\"type\": \"ping\", \"data\": {}}");
 		assertThat(minjiClient.next().get("type").asString()).isEqualTo("pong");
 
 		presenceService.heartbeat(meOnMac, new PresenceRequest(PresenceStatus.RESTING, null));
-		assertThat(minjiClient.next().at("/data/status").asString()).isEqualTo("RESTING");
+		assertThat(minjiClient.next("presence.changed").at("/data/status").asString()).isEqualTo("RESTING");
 		minjiClient.close();
 	}
 
@@ -90,11 +92,11 @@ class PresenceRealtimeTest {
 		Client meClient = connect(me);
 
 		meClient.send("{\"type\": \"presence.update\", \"data\": {\"status\": \"WORKING\"}}");
-		assertThat(minjiClient.next().at("/data/status").asString()).isEqualTo("WORKING");
+		assertThat(minjiClient.next("presence.changed").at("/data/status").asString()).isEqualTo("WORKING");
 
 		meClient.close();
 
-		assertThat(minjiClient.next().at("/data/status").asString()).isEqualTo("OFFLINE");
+		assertThat(minjiClient.next("presence.changed").at("/data/status").asString()).isEqualTo("OFFLINE");
 		minjiClient.close();
 	}
 

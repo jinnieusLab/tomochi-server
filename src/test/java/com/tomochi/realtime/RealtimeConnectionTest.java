@@ -241,6 +241,17 @@ class RealtimeConnectionTest {
 			return jsonMapper.readTree(payload);
 		}
 
+		/** 다른 종류의 메시지는 건너뛰고 이 종류의 다음 메시지 */
+		JsonNode next(String type) throws Exception {
+			for (int i = 0; i < 20; i++) {
+				JsonNode message = next();
+				if (message.get("type").asString().equals(type)) {
+					return message;
+				}
+			}
+			throw new AssertionError(type + " 메시지가 오지 않았어요");
+		}
+
 		void close() throws Exception {
 			session.close(CloseStatus.NORMAL);
 		}
