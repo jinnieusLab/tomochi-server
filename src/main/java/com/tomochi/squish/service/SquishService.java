@@ -5,11 +5,15 @@ import com.tomochi.friend.repository.FriendQuery;
 import com.tomochi.friend.service.FriendSettingService;
 import com.tomochi.global.error.BusinessException;
 import com.tomochi.squish.error.SquishErrorCode;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -24,6 +28,7 @@ public class SquishService {
 	private final FriendSettingService friendSettingService;
 	private final SquishCooldown cooldown;
 	private final JdbcTemplate jdbcTemplate;
+	private final SquishDelivery squishDelivery;
 	private final Clock clock;
 
 	public void send(Long fromUserId, Long toUserId) {
@@ -37,7 +42,16 @@ public class SquishService {
 		if (friendSettingService.isHidden(toUserId, fromUserId)) {
 			return;
 		}
-		jdbcTemplate.update("INSERT INTO squish (from_user_id, to_user_id, sent_at) VALUES (?, ?, ?)",
-				fromUserId, toUserId, LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+		Instant sentAt = clock.instant();
+		GeneratedKeyHolder key = new GeneratedKeyHolder();
+		jdbcTemplate.update(connection -> {
+			PreparedStatement statement = connection.prepareStatement(
+					"INSERT INTO squish (from_user_id, to_user_id, sent_at) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+			statement.setLong(1, fromUserId);
+			statement.setLong(2, toUserId);
+			statement.setObject(3, LocalDateTime.ofInstant(sentAt, ZoneOffset.UTC));
+			return statement;
+		}, key);
+		squishDelivery.push(key.getKey().longValue(), fromUserId, toUserId, sentAt);
 	}
 }

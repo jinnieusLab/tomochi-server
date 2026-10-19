@@ -5,6 +5,9 @@ import com.tomochi.presence.domain.PresenceStatus;
 import com.tomochi.presence.domain.StatusIcon;
 import com.tomochi.presence.dto.PresenceRequest;
 import com.tomochi.presence.service.PresenceService;
+import com.tomochi.squish.service.SquishDelivery;
+import java.util.ArrayList;
+import java.util.List;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -47,15 +50,18 @@ public class RealtimeHandler extends TextWebSocketHandler {
 
 	private final LocalUserMessageSender sender;
 	private final PresenceService presenceService;
+	private final SquishDelivery squishDelivery;
 	private final JsonMapper jsonMapper;
 	private final TaskScheduler taskScheduler;
 	private final Clock clock;
 	private final Map<String, ScheduledFuture<?>[]> timers = new java.util.concurrent.ConcurrentHashMap<>();
 
-	public RealtimeHandler(LocalUserMessageSender sender, PresenceService presenceService, JsonMapper jsonMapper,
+	public RealtimeHandler(LocalUserMessageSender sender, PresenceService presenceService, SquishDelivery squishDelivery,
+			JsonMapper jsonMapper,
 			@Qualifier(RealtimeSchedulerConfig.REALTIME_SCHEDULER) TaskScheduler taskScheduler, Clock clock) {
 		this.sender = sender;
 		this.presenceService = presenceService;
+		this.squishDelivery = squishDelivery;
 		this.jsonMapper = jsonMapper;
 		this.taskScheduler = taskScheduler;
 		this.clock = clock;
@@ -86,6 +92,7 @@ public class RealtimeHandler extends TextWebSocketHandler {
 		switch (incoming.type() == null ? "" : incoming.type()) {
 			case "ping" -> reply(session, "pong", Map.of());
 			case "presence.update" -> handlePresence(session, incoming.data());
+			case "squish.ack" -> handleSquishAck(session, incoming.data());
 			default -> reply(session, "error", Map.of("code", "UNKNOWN_TYPE"));
 		}
 	}
@@ -99,6 +106,17 @@ public class RealtimeHandler extends TextWebSocketHandler {
 		} catch (RuntimeException e) {
 			reply(session, "error", Map.of("code", "INVALID_PRESENCE"));
 		}
+	}
+
+	private void handleSquishAck(WebSocketSession session, JsonNode data) throws IOException {
+		JsonNode ids = data == null ? null : data.get("squishIds");
+		if (ids == null || !ids.isArray()) {
+			reply(session, "error", Map.of("code", "INVALID_ACK"));
+			return;
+		}
+		List<Long> squishIds = new ArrayList<>();
+		ids.forEach(id -> squishIds.add(id.asLong()));
+		squishDelivery.acknowledge(userId(session), squishIds);
 	}
 
 	@Override
