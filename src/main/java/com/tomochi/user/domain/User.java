@@ -96,6 +96,11 @@ public class User {
 		return deletedAt != null && !deletedAt.plus(WITHDRAWAL_GRACE).isAfter(now);
 	}
 
+	/** 이전 코드는 이 순간부터 쓸 수 없어요. */
+	public void changeInviteCode(String inviteCode) {
+		this.inviteCode = inviteCode;
+	}
+
 	public void changeTimezone(String timezone) {
 		this.timezone = timezone;
 	}
