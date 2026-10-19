@@ -2,6 +2,7 @@ package com.tomochi.user.service;
 
 import com.tomochi.global.error.BusinessException;
 import com.tomochi.user.domain.Nickname;
+import com.tomochi.user.domain.PetKind;
 import com.tomochi.user.domain.User;
 import com.tomochi.user.domain.UserRepository;
 import com.tomochi.user.dto.UserResponse;
@@ -28,6 +29,9 @@ public class UserService {
 		User user = getUser(userId);
 		if (request.hasNickname()) {
 			user.changeNickname(Nickname.normalize(request.nickname()));
+		}
+		if (request.hasPetKind()) {
+			user.changePetKind(PetKind.from(request.petKind()));
 		}
 		return UserResponse.from(user);
 	}
