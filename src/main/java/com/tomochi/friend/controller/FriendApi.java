@@ -46,4 +46,17 @@ public interface FriendApi {
 	@ApiErrorCodes(value = FriendErrorCode.class, codes = "FRIEND_NOT_FOUND")
 	FriendSummaryResponse find(@CurrentUser AuthUser user,
 			@Parameter(description = "친구 사용자 id", example = "34") Long friendId);
+
+	@Operation(summary = "목록에서 숨기기", description = """
+			내 쪽에서만 숨겨요. **상대는 몰라요.** 친구 관계와 둘이 함께한 날은 그대로 쌓여요.
+			숨긴 친구가 보낸 꾹은 받지 않고(알림도 없어요), 숨긴 친구의 펫도 내 화면에 놀러 오지 않아요.
+			여러 번 불러도 같아요.""")
+	@ApiResponse(responseCode = "204", description = "숨김")
+	@ApiErrorCodes(value = FriendErrorCode.class, codes = "FRIEND_NOT_FOUND")
+	void hide(@CurrentUser AuthUser user, @Parameter(description = "친구 사용자 id", example = "34") Long friendId);
+
+	@Operation(summary = "다시 보이기", description = "숨긴 친구를 목록에 다시 보여요. 숨기지 않은 친구에게 불러도 괜찮아요.")
+	@ApiResponse(responseCode = "204", description = "보임")
+	@ApiErrorCodes(value = FriendErrorCode.class, codes = "FRIEND_NOT_FOUND")
+	void unhide(@CurrentUser AuthUser user, @Parameter(description = "친구 사용자 id", example = "34") Long friendId);
 }
