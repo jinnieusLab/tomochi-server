@@ -1,12 +1,12 @@
 name: Deploy Dev
 
-# main의 CI가 통과하면 Dev에 배포해요. Actions 탭에서 손으로 돌릴 수도 있어요.
+# develop의 CI가 통과하면 Dev에 배포해요. Actions 탭에서 손으로 돌릴 수도 있어요.
 # VPS가 준비되기 전에는 저장소 변수 DEPLOY_DEV_ENABLED를 두지 않아서 건너뛰어요.
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    branches: [main]
+    branches: [develop]
   workflow_dispatch:
 
 concurrency:

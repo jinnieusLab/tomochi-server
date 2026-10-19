@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-# CodeRabbit PR 리뷰 설정. main으로 가는 PR을 자동으로 리뷰해요.
+# CodeRabbit PR 리뷰 설정. develop·main으로 가는 PR을 자동으로 리뷰해요.
 language: ko-KR
 
 tone_instructions: >-
@@ -22,6 +22,7 @@ reviews:
     enabled: true
     drafts: false
     base_branches:
+      - develop
       - main
 
   path_filters:
@@ -49,7 +50,7 @@ reviews:
     - path: "src/main/resources/db/migration/**"
       instructions: |
         Flyway 마이그레이션이에요 (MySQL 8.4, InnoDB, utf8mb4, 시각은 DATETIME(6) UTC).
-        이미 main에 들어간 파일은 고치면 안 되고 새 버전 파일을 더해야 해요.
+        이미 develop에 들어간 파일은 고치면 안 되고 새 버전 파일을 더해야 해요.
         엔티티와 컬럼 타입·NULL 여부가 맞는지(ddl-auto는 validate), 조회 패턴에 맞는 인덱스·유니크 제약이 있는지 봐 주세요.
     - path: "src/test/java/**"
       instructions: |
