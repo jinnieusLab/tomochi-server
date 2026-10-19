@@ -1,6 +1,7 @@
 package com.tomochi.global.docs;
 
 import com.tomochi.auth.error.AuthErrorCode;
+import com.tomochi.global.error.CommonErrorCode;
 import com.tomochi.global.error.ErrorCode;
 import com.tomochi.global.error.ErrorResponse;
 import io.swagger.v3.core.converter.ModelConverters;
@@ -25,7 +26,8 @@ import org.springframework.web.method.HandlerMethod;
 /**
  * {@link ApiErrorCodes}를 읽어 Swagger 응답에 오류 예시를 붙여요. 같은 상태 코드의 오류는 한 응답에 예시 여러 개로 모아요.
  * 어노테이션은 컨트롤러가 구현한 {@code XxxApi} 인터페이스에 있어도 찾아요.
- * 로그인이 필요한 API(공개 표시 {@code @SecurityRequirements}가 없는 API)에는 401 예시를 자동으로 붙여요.
+ * 로그인이 필요한 API(공개 표시 {@code @SecurityRequirements}가 없는 API)에는 401 예시를, 모든 API에는 요청 제한 429 예시를
+ * 자동으로 붙여요.
  */
 @Component
 public class ApiErrorCodesCustomizer implements OperationCustomizer {
@@ -39,15 +41,13 @@ public class ApiErrorCodesCustomizer implements OperationCustomizer {
 			errorCodes.addAll(List.of(
 					AuthErrorCode.UNAUTHENTICATED, AuthErrorCode.TOKEN_EXPIRED, AuthErrorCode.TOKEN_INVALID));
 		}
+		errorCodes.add(CommonErrorCode.RATE_LIMITED);
 		Set<ApiErrorCodes> declared =
 				AnnotatedElementUtils.findMergedRepeatableAnnotations(handlerMethod.getMethod(), ApiErrorCodes.class);
 		for (ApiErrorCodes annotation : declared) {
 			for (String name : annotation.codes()) {
 				errorCodes.add(find(annotation.value(), name));
 			}
-		}
-		if (errorCodes.isEmpty()) {
-			return operation;
 		}
 		Map<Integer, Map<String, Example>> examplesByStatus = new LinkedHashMap<>();
 		for (ErrorCode errorCode : errorCodes) {

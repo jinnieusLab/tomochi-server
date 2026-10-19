@@ -18,9 +18,17 @@ public class ErrorResponseWriter {
 	private final JsonMapper jsonMapper;
 
 	public void write(HttpServletResponse response, ErrorCode errorCode) throws IOException {
+		write(response, errorCode, ErrorResponse.of(errorCode));
+	}
+
+	public void write(HttpServletResponse response, ErrorCode errorCode, long retryAfterSeconds) throws IOException {
+		write(response, errorCode, ErrorResponse.of(errorCode, retryAfterSeconds));
+	}
+
+	private void write(HttpServletResponse response, ErrorCode errorCode, ErrorResponse body) throws IOException {
 		response.setStatus(errorCode.status().value());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-		jsonMapper.writeValue(response.getOutputStream(), ErrorResponse.of(errorCode));
+		jsonMapper.writeValue(response.getOutputStream(), body);
 	}
 }
