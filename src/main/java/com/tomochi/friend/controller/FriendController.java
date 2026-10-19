@@ -5,6 +5,11 @@ import com.tomochi.friend.dto.FriendListResponse;
 import com.tomochi.friend.dto.FriendResponse;
 import com.tomochi.friend.dto.FriendSummaryResponse;
 import com.tomochi.friend.service.FriendListService;
+import com.tomochi.friend.service.FriendSettingService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import com.tomochi.friend.service.FriendshipFacade;
 import com.tomochi.global.security.AuthUser;
 import com.tomochi.global.security.CurrentUser;
@@ -25,6 +30,7 @@ public class FriendController implements FriendApi {
 
 	private final FriendshipFacade friendshipFacade;
 	private final FriendListService friendListService;
+	private final FriendSettingService friendSettingService;
 
 	@Override
 	@PostMapping
@@ -43,5 +49,19 @@ public class FriendController implements FriendApi {
 	@GetMapping("/{friendId}")
 	public FriendSummaryResponse find(@CurrentUser AuthUser user, @PathVariable Long friendId) {
 		return friendListService.findFriend(user.userId(), friendId);
+	}
+
+	@Override
+	@PutMapping("/{friendId}/hidden")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void hide(@CurrentUser AuthUser user, @PathVariable Long friendId) {
+		friendSettingService.setHidden(user.userId(), friendId, true);
+	}
+
+	@Override
+	@DeleteMapping("/{friendId}/hidden")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void unhide(@CurrentUser AuthUser user, @PathVariable Long friendId) {
+		friendSettingService.setHidden(user.userId(), friendId, false);
 	}
 }
