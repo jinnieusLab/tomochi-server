@@ -61,3 +61,27 @@ open "http://localhost:8080/api/v1/auth/oauth2/github?challenge=$CHALLENGE&petKi
 curl -X POST localhost:8080/api/v1/auth/token -H 'Content-Type: application/json' \
   -d "{\"code\":\"$CODE\",\"codeVerifier\":\"$VERIFIER\",\"deviceName\":\"내 맥북\"}"
 ```
+
+## 토큰 재발급 (Refresh Token 회전)
+
+`POST /api/v1/auth/refresh { refreshToken }` → 새 `{ accessToken, refreshToken, expiresIn }`. 쓴 Refresh Token은 바로 폐기돼요.
+
+```text
+로그인 ─▶ A ──회전──▶ B ──회전──▶ C        (A, B, C는 같은 family = 같은 기기)
+공격자가 훔친 A를 나중에 쓰면 ─▶ family 전체 폐기 → 앱도 다시 로그인 (403 REFRESH_TOKEN_REUSED)
+```
+
+| 상황 | 응답 | family |
+| --- | --- | --- |
+| 살아 있는 토큰 | 200 새 토큰 한 쌍 | 이어짐 |
+| 없거나 만료된 토큰 | 401 `REFRESH_TOKEN_INVALID` | 그대로 |
+| 10초 안에 회전된 토큰 (같은 토큰으로 보낸 동시 요청) | 409 `REFRESH_TOKEN_ROTATED` | 그대로 |
+| 그 밖의 폐기된 토큰 (재사용) | 403 `REFRESH_TOKEN_REUSED` | 모두 폐기 |
+
+### 왜 이렇게
+
+- **회전 + 재사용 감지.** 맥 앱은 몇 주씩 켜 두니 Refresh Token 수명이 길어야 해요(30일). 대신 쓸 때마다 바꾸고, 이미 폐기된 토큰이 다시 오면 "둘 중 하나는 훔친 사람"이라 그 기기의 토큰을 모두 끊어요. 앱과 공격자 중 누가 먼저 썼든 다음 회전에서 들통나요.
+- **동시 요청은 락 대신 조건부 UPDATE로 정해요.** `UPDATE refresh_token SET revoked_at = now WHERE id = ? AND revoked_at IS NULL`. InnoDB가 이 행을 잠그고 차례로 실행해서 영향 받은 행이 1인 요청은 하나뿐이에요. 그 요청만 새 토큰을 만들어요 (`RefreshTokenConcurrencyTest`: 10개 동시 → 1개 성공, 9개 409).
+- **진 요청은 잠금 읽기로 다시 봐요.** MySQL 기본 격리 수준(REPEATABLE READ)에서 평범한 SELECT는 트랜잭션 처음의 스냅샷을 읽어서, 방금 이긴 요청이 만든 새 토큰이 안 보여요. `SELECT ... FOR UPDATE`는 지금 커밋된 값을 읽어서 "방금 회전됐는지"를 정확히 판단해요.
+- **10초 유예.** 같은 토큰으로 거의 동시에 온 요청(앱이 재발급을 두 번 보냄)을 탈취로 보면 정상 사용자가 로그아웃돼요. 회전된 지 10초 안이고 family에 살아 있는 다음 토큰이 있을 때만 409로 봐 주고, 그 밖에는 탈취로 봐요.
+- **실패 응답이어도 폐기는 남겨요.** 재사용을 감지하면 family를 폐기한 뒤 403을 던지는데, 예외로 트랜잭션이 롤백되면 폐기도 사라져요. 그래서 `@Transactional(noRollbackFor = BusinessException.class)`예요.
