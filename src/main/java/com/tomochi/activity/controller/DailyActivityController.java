@@ -2,7 +2,9 @@ package com.tomochi.activity.controller;
 
 import com.tomochi.activity.dto.DayResponse;
 import com.tomochi.activity.dto.DaysResponse;
+import com.tomochi.activity.dto.WeekResponse;
 import com.tomochi.activity.service.DailyActivityService;
+import com.tomochi.activity.service.WeeklyActivityService;
 import com.tomochi.global.security.AuthUser;
 import com.tomochi.global.security.CurrentUser;
 import java.time.LocalDate;
@@ -14,21 +16,28 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/me/days")
+@RequestMapping("/api/v1/me")
 @RequiredArgsConstructor
 public class DailyActivityController implements DailyActivityApi {
 
 	private final DailyActivityService dailyActivityService;
+	private final WeeklyActivityService weeklyActivityService;
 
 	@Override
-	@GetMapping("/{date}")
+	@GetMapping("/days/{date}")
 	public DayResponse findDay(@CurrentUser AuthUser user, @PathVariable LocalDate date) {
 		return dailyActivityService.findDay(user.userId(), date);
 	}
 
 	@Override
-	@GetMapping
+	@GetMapping("/days")
 	public DaysResponse findDays(@CurrentUser AuthUser user, @RequestParam LocalDate from, @RequestParam LocalDate to) {
 		return new DaysResponse(dailyActivityService.findDays(user.userId(), from, to));
+	}
+
+	@Override
+	@GetMapping("/weeks/current")
+	public WeekResponse findCurrentWeek(@CurrentUser AuthUser user) {
+		return weeklyActivityService.findCurrentWeek(user.userId());
 	}
 }

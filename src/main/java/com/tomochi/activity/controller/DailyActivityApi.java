@@ -2,6 +2,7 @@ package com.tomochi.activity.controller;
 
 import com.tomochi.activity.dto.DayResponse;
 import com.tomochi.activity.dto.DaysResponse;
+import com.tomochi.activity.dto.WeekResponse;
 import com.tomochi.activity.error.ActivityErrorCode;
 import com.tomochi.global.docs.ApiErrorCodes;
 import com.tomochi.global.error.CommonErrorCode;
@@ -35,4 +36,11 @@ public interface DailyActivityApi {
 	DaysResponse findDays(@CurrentUser AuthUser user,
 			@Parameter(description = "시작일 yyyy-MM-dd", example = "2026-10-11") LocalDate from,
 			@Parameter(description = "끝일 yyyy-MM-dd (포함)", example = "2026-10-17") LocalDate to);
+
+	@Operation(summary = "이번 주 합계", description = """
+			메인의 "이번 주 친구와 N일", 내 프로필의 "이번 주 N시간 · 친구와 N일"에 써요.
+			주는 **일요일~토요일**, 내 시간대 기준이고 `seconds`는 일요일부터 지금까지예요.
+			`togetherDays`는 둘이 함께한 시간 집계(TGTR-3)가 생기기 전까지 0이에요.""")
+	@ApiResponse(responseCode = "200", description = "이번 주 합계")
+	WeekResponse findCurrentWeek(@CurrentUser AuthUser user);
 }
