@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tomochi.support.TestcontainersConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.micrometer.metrics.test.autoconfigure.AutoConfigureMetrics;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatusCode;
@@ -13,13 +14,12 @@ import org.springframework.web.client.RestClient;
 
 /**
  * Actuator는 API 포트가 아니라 관리 포트에서만 열려요. 실제 포트를 띄워서 확인해요.
+ * 실제 포트가 필요해서 {@code @IntegrationTest}(MOCK 환경의 {@code @SpringBootTest}) 대신 직접 선언해요.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-		properties = {
-				"management.server.port=0",
-				// 테스트에서는 기본으로 지표 내보내기가 꺼져 있어서 켜요.
-				"management.prometheus.metrics.export.enabled=true"
-		})
+		properties = "management.server.port=0")
+// 테스트에서는 기본으로 Prometheus 같은 외부 지표 저장소를 구성하지 않아서 켜요.
+@AutoConfigureMetrics
 @Import(TestcontainersConfiguration.class)
 class ManagementEndpointTest {
 
