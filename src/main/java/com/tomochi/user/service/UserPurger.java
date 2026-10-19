@@ -17,6 +17,7 @@ public class UserPurger {
 
 	/** 사용자 id 하나를 받는 DELETE 문. 친구 관계는 상대 쪽에서도 사라져요. */
 	private static final List<String> DELETES = List.of(
+			"DELETE FROM friend_setting WHERE owner_id = ?1 OR friend_id = ?1",
 			"DELETE FROM friendship WHERE user_low = ?1 OR user_high = ?1",
 			"DELETE FROM daily_activity WHERE user_id = ?1",
 			"DELETE FROM activity_segment WHERE user_id = ?1",
