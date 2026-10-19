@@ -48,6 +48,19 @@ public class FriendQuery {
 	}
 
 	/**
+	 * 내 상태 변화를 받을 친구들. 나를 목록에서 숨긴 친구와 탈퇴한 친구는 빼요.
+	 */
+	public List<Long> findWatcherIds(Long userId) {
+		return jdbcTemplate.queryForList("""
+				SELECT u.id
+				FROM friendship f
+				JOIN users u ON u.id = IF(f.user_low = ?, f.user_high, f.user_low)
+				LEFT JOIN friend_setting fs ON fs.owner_id = u.id AND fs.friend_id = ?
+				WHERE (f.user_low = ? OR f.user_high = ?) AND u.deleted_at IS NULL AND COALESCE(fs.hidden, FALSE) = FALSE
+				""", Long.class, userId, userId, userId, userId);
+	}
+
+	/**
 	 * @param lastSeenAt 하트비트로 남긴 마지막 접속 시각 (5분 정밀도)
 	 * @param hidden     내가 목록에서 숨겼는지
 	 */

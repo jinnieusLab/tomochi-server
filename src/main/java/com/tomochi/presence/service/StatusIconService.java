@@ -1,10 +1,13 @@
 package com.tomochi.presence.service;
 
 import com.tomochi.global.error.BusinessException;
+import com.tomochi.presence.domain.Presence;
 import com.tomochi.presence.domain.StatusIcon;
 import com.tomochi.user.domain.User;
 import com.tomochi.user.domain.UserRepository;
 import com.tomochi.user.error.UserErrorCode;
+import java.time.Clock;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +22,8 @@ public class StatusIconService {
 
 	private final UserRepository userRepository;
 	private final PresenceStore presenceStore;
+	private final PresenceNotifier presenceNotifier;
+	private final Clock clock;
 
 	@Transactional
 	public void change(Long userId, StatusIcon icon) {
@@ -26,6 +31,9 @@ public class StatusIconService {
 				.filter(found -> !found.isWithdrawn())
 				.orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 		user.changeStatusIcon(icon);
+		Instant now = clock.instant();
+		Presence before = presenceStore.find(userId, now);
 		presenceStore.changeIcon(userId, icon);
+		presenceNotifier.notifyIfChanged(userId, before, presenceStore.find(userId, now));
 	}
 }
