@@ -15,6 +15,11 @@ tomochi:
   # 테스트 중에 배치가 끼어들지 않게 꺼요. 배치는 메서드를 직접 불러 확인해요.
   scheduling:
     enabled: false
+  # 테스트는 한 IP에서 요청을 많이 보내서 한도를 크게 둬요. 제한은 RateLimitTest에서 낮춰 확인해요.
+  rate-limit:
+    auth-per-ip: 100000
+    upload-per-user: 100000
+    default-per-user: 100000
   auth:
     # 테스트 전용 키 (Base64, 48바이트)
     jwt-secret: dGVzdC1vbmx5LWp3dC1zZWNyZXQtZm9yLXRvbW9jaGktc2VydmVyLXRlc3RzISE=

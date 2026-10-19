@@ -7,6 +7,9 @@ import com.tomochi.auth.oauth.OAuth2LoginSuccessHandler;
 import com.tomochi.auth.oauth.PkceLoginRequestResolver;
 import com.tomochi.auth.oauth.RedisOAuth2AuthorizationRequestRepository;
 import com.tomochi.global.error.ErrorResponseWriter;
+import com.tomochi.global.ratelimit.RateLimitFilter;
+import com.tomochi.global.ratelimit.RateLimitProperties;
+import com.tomochi.global.ratelimit.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +22,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 
 /**
  * 맥 앱 전용 API라 세션·쿠키·CSRF·CORS를 쓰지 않아요.
@@ -41,6 +45,8 @@ public class SecurityConfig {
 	private final JsonAuthenticationEntryPoint authenticationEntryPoint;
 	private final JsonAccessDeniedHandler accessDeniedHandler;
 	private final ErrorResponseWriter errorResponseWriter;
+	private final RateLimiter rateLimiter;
+	private final RateLimitProperties rateLimitProperties;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http,
@@ -73,7 +79,13 @@ public class SecurityConfig {
 						.authenticationEntryPoint(authenticationEntryPoint)
 						.accessDeniedHandler(accessDeniedHandler))
 				.addFilterBefore(new LoginStartValidationFilter(errorResponseWriter),
-						OAuth2AuthorizationRequestRedirectFilter.class);
+						OAuth2AuthorizationRequestRedirectFilter.class)
+				// 로그인 시작은 OAuth2 필터가 먼저 처리해서, 그 앞에도 하나 둬요.
+				.addFilterBefore(new RateLimitFilter(RateLimitFilter.Stage.LOGIN_START, rateLimiter, rateLimitProperties,
+						errorResponseWriter), LoginStartValidationFilter.class)
+				// 나머지는 Bearer 인증 뒤(사용자 id를 안 뒤), 권한 확인 앞에서 세요.
+				.addFilterBefore(new RateLimitFilter(RateLimitFilter.Stage.API, rateLimiter, rateLimitProperties,
+						errorResponseWriter), AuthorizationFilter.class);
 		return http.build();
 	}
 }
