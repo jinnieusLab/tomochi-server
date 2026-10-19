@@ -1,0 +1,9 @@
+logging:
+  level:
+    com.tomochi: info
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
