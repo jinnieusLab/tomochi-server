@@ -1,0 +1,168 @@
+package com.tomochi.realtime;
+
+import com.tomochi.global.security.AuthUser;
+import com.tomochi.presence.domain.PresenceStatus;
+import com.tomochi.presence.domain.StatusIcon;
+import com.tomochi.presence.dto.PresenceRequest;
+import com.tomochi.presence.service.PresenceService;
+import java.io.IOException;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
+/**
+ * {@code /api/v1/ws}. 메시지는 JSON {@code { type, data }}.
+ *
+ * <ul>
+ *   <li>30초 동안 아무 메시지가 없으면 끊어요. 앱은 {@code ping}(또는 하트비트)을 보내 연결을 유지해요.
+ *       앱이 비정상 종료돼도 연결이 남지 않아요 (10초마다 확인)</li>
+ *   <li>Access Token이 만료되기 1분 전에 {@code token.expiring}을 보내고, 만료되면 끊어요. 앱은 재발급 후 다시 연결해요</li>
+ *   <li>앱은 끊기면 1초, 2초, 4초 … 최대 60초 간격으로 다시 붙어요</li>
+ * </ul>
+ */
+@Slf4j
+@Component
+public class RealtimeHandler extends TextWebSocketHandler {
+
+	public static final CloseStatus TOKEN_EXPIRED = new CloseStatus(4001, "token expired");
+	public static final CloseStatus IDLE = new CloseStatus(4000, "idle");
+	static final Duration EXPIRY_WARNING = Duration.ofMinutes(1);
+	static final Duration IDLE_TIMEOUT = Duration.ofSeconds(30);
+	private static final Duration IDLE_CHECK_INTERVAL = Duration.ofSeconds(10);
+	private static final int MAX_MESSAGE_BYTES = 16 * 1024;
+	private static final String LAST_ACTIVITY = "lastActivity";
+
+	private final LocalUserMessageSender sender;
+	private final PresenceService presenceService;
+	private final JsonMapper jsonMapper;
+	private final TaskScheduler taskScheduler;
+	private final Clock clock;
+	private final Map<String, ScheduledFuture<?>[]> timers = new java.util.concurrent.ConcurrentHashMap<>();
+
+	public RealtimeHandler(LocalUserMessageSender sender, PresenceService presenceService, JsonMapper jsonMapper,
+			@Qualifier(RealtimeSchedulerConfig.REALTIME_SCHEDULER) TaskScheduler taskScheduler, Clock clock) {
+		this.sender = sender;
+		this.presenceService = presenceService;
+		this.jsonMapper = jsonMapper;
+		this.taskScheduler = taskScheduler;
+		this.clock = clock;
+	}
+
+	@Override
+	public void afterConnectionEstablished(WebSocketSession session) {
+		session.setTextMessageSizeLimit(MAX_MESSAGE_BYTES);
+		touch(session);
+		Long userId = userId(session);
+		WebSocketSession safe = sender.register(userId, session);
+		scheduleTokenExpiry(session, safe);
+		ScheduledFuture<?> idleCheck = taskScheduler.scheduleAtFixedRate(() -> closeIfIdle(session, safe),
+				clock.instant().plus(IDLE_CHECK_INTERVAL), IDLE_CHECK_INTERVAL);
+		timers.merge(session.getId(), new ScheduledFuture<?>[] {idleCheck}, RealtimeHandler::concat);
+	}
+
+	@Override
+	protected void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
+		touch(session);
+		RealtimeMessage incoming;
+		try {
+			incoming = jsonMapper.readValue(message.getPayload(), RealtimeMessage.class);
+		} catch (JacksonException e) {
+			reply(session, "error", Map.of("code", "MALFORMED_MESSAGE"));
+			return;
+		}
+		switch (incoming.type() == null ? "" : incoming.type()) {
+			case "ping" -> reply(session, "pong", Map.of());
+			case "presence.update" -> handlePresence(session, incoming.data());
+			default -> reply(session, "error", Map.of("code", "UNKNOWN_TYPE"));
+		}
+	}
+
+	private void handlePresence(WebSocketSession session, JsonNode data) throws IOException {
+		try {
+			PresenceStatus status = PresenceStatus.valueOf(data.get("status").asString());
+			JsonNode icon = data.get("icon");
+			StatusIcon statusIcon = icon == null || icon.isNull() ? null : StatusIcon.valueOf(icon.asString());
+			presenceService.heartbeat(authUser(session), new PresenceRequest(status, statusIcon));
+		} catch (RuntimeException e) {
+			reply(session, "error", Map.of("code", "INVALID_PRESENCE"));
+		}
+	}
+
+	@Override
+	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+		sender.unregister(userId(session), session);
+		ScheduledFuture<?>[] scheduled = timers.remove(session.getId());
+		if (scheduled != null) {
+			for (ScheduledFuture<?> future : scheduled) {
+				future.cancel(false);
+			}
+		}
+	}
+
+	private void scheduleTokenExpiry(WebSocketSession session, WebSocketSession safe) {
+		Instant expiresAt = (Instant) session.getAttributes().get(AuthHandshakeInterceptor.TOKEN_EXPIRES_AT);
+		if (expiresAt == null || expiresAt.equals(Instant.MAX)) {
+			return;
+		}
+		Instant warnAt = expiresAt.minus(EXPIRY_WARNING);
+		ScheduledFuture<?> warning = taskScheduler.schedule(
+				() -> sender.sendTo(safe, toText("token.expiring", Map.of("expiresAt", expiresAt.toString()))),
+				warnAt.isAfter(clock.instant()) ? warnAt : clock.instant());
+		ScheduledFuture<?> close = taskScheduler.schedule(() -> closeQuietly(safe, TOKEN_EXPIRED), expiresAt);
+		timers.merge(session.getId(), new ScheduledFuture<?>[] {warning, close}, RealtimeHandler::concat);
+	}
+
+	private void touch(WebSocketSession session) {
+		session.getAttributes().put(LAST_ACTIVITY, clock.instant());
+	}
+
+	private void closeIfIdle(WebSocketSession session, WebSocketSession safe) {
+		Instant last = (Instant) session.getAttributes().get(LAST_ACTIVITY);
+		if (last != null && last.plus(IDLE_TIMEOUT).isBefore(clock.instant())) {
+			closeQuietly(safe, IDLE);
+		}
+	}
+
+	private static ScheduledFuture<?>[] concat(ScheduledFuture<?>[] a, ScheduledFuture<?>[] b) {
+		ScheduledFuture<?>[] merged = java.util.Arrays.copyOf(a, a.length + b.length);
+		System.arraycopy(b, 0, merged, a.length, b.length);
+		return merged;
+	}
+
+	private void reply(WebSocketSession session, String type, Object data) throws IOException {
+		session.sendMessage(toText(type, data));
+	}
+
+	private TextMessage toText(String type, Object data) {
+		return new TextMessage(jsonMapper.writeValueAsString(Map.of("type", type, "data", data)));
+	}
+
+	private static void closeQuietly(WebSocketSession session, CloseStatus status) {
+		try {
+			session.close(status);
+		} catch (IOException e) {
+			log.debug("WebSocket 닫기 실패: {}", e.getClass().getSimpleName());
+		}
+	}
+
+	private static Long userId(WebSocketSession session) {
+		return (Long) session.getAttributes().get(AuthHandshakeInterceptor.USER_ID);
+	}
+
+	private static AuthUser authUser(WebSocketSession session) {
+		return new AuthUser(userId(session), (String) session.getAttributes().get(AuthHandshakeInterceptor.SESSION_ID));
+	}
+}
