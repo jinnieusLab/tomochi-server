@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: tomochi-server
+  profiles:
+    default: local
+  config:
+    # 로컬에서는 .env 파일에서 비밀값을 읽어요. 서버에서는 환경 변수로 넣어요.
+    import: optional:file:.env[.properties]
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+springdoc:
+  paths-to-match: /api/v1/**
