@@ -11,7 +11,7 @@ public record WeekResponse(
 		@Schema(description = "이번 주 일요일부터 지금까지 함께한 시간(초)", example = "51600")
 		long seconds,
 
-		@Schema(description = "이번 주에 친구 누구와든 겹쳐 작업한 날 수. 둘이 함께한 시간 집계(TGTR-3) 전까지는 0", example = "3")
+		@Schema(description = "이번 주에 친구 누구와든 1초라도 겹쳐 작업한 날 수", example = "3")
 		int togetherDays
 ) {
 }

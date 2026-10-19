@@ -40,7 +40,7 @@ public interface DailyActivityApi {
 	@Operation(summary = "이번 주 합계", description = """
 			메인의 "이번 주 친구와 N일", 내 프로필의 "이번 주 N시간 · 친구와 N일"에 써요.
 			주는 **일요일~토요일**, 내 시간대 기준이고 `seconds`는 일요일부터 지금까지예요.
-			`togetherDays`는 둘이 함께한 시간 집계(TGTR-3)가 생기기 전까지 0이에요.""")
+			`togetherDays`는 이번 주에 친구 누구와든 1초라도 겹쳐 작업한 날 수예요.""")
 	@ApiResponse(responseCode = "200", description = "이번 주 합계")
 	WeekResponse findCurrentWeek(@CurrentUser AuthUser user);
 }

@@ -3,6 +3,7 @@ package com.tomochi.activity.service;
 import com.tomochi.activity.dto.DayResponse;
 import com.tomochi.activity.dto.WeekResponse;
 import com.tomochi.global.error.BusinessException;
+import com.tomochi.together.service.TogetherQueryService;
 import com.tomochi.user.domain.User;
 import com.tomochi.user.domain.UserRepository;
 import com.tomochi.user.error.UserErrorCode;
@@ -25,6 +26,7 @@ public class WeeklyActivityService {
 
 	private final UserRepository userRepository;
 	private final DailyActivityService dailyActivityService;
+	private final TogetherQueryService togetherQueryService;
 	private final Clock clock;
 
 	@Transactional
@@ -37,8 +39,7 @@ public class WeeklyActivityService {
 		long seconds = dailyActivityService.findDays(userId, weekStart, today).stream()
 				.mapToLong(DayResponse::seconds)
 				.sum();
-		// TGTR-3(둘이 함께한 시간 집계)에서 채워요.
-		int togetherDays = 0;
+		int togetherDays = togetherQueryService.countTogetherDays(userId, weekStart, today);
 		return new WeekResponse(weekStart, seconds, togetherDays);
 	}
 
