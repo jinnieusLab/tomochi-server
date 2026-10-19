@@ -74,6 +74,10 @@ class UpdateNicknameTest {
 		patchMe("{\"nickname\": \"민\\n지\"}")
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("INVALID_NICKNAME"));
+		// 줄바꿈만 보내도 닉네임이 지워지지 않아요.
+		patchMe("{\"nickname\": \"\\n\"}")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_NICKNAME"));
 
 		patchMe("{}").andExpect(jsonPath("$.nickname").value("민지"));
 	}

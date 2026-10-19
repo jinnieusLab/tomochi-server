@@ -17,8 +17,14 @@ class NicknameTest {
 		assertThat(Nickname.normalize("　민지　")).isEqualTo("민지");
 	}
 
+	@Test
+	void NBSP_같은_유니코드_공백도_앞뒤에서_지운다() {
+		assertThat(Nickname.normalize("\u00A0민지\u00A0")).isEqualTo("민지");
+		assertThat(Nickname.normalize("\u202F민지\u2007")).isEqualTo("민지");
+	}
+
 	@ParameterizedTest
-	@ValueSource(strings = {"", " ", "   ", "　"})
+	@ValueSource(strings = {"", " ", "   ", "　", "\u00A0"})
 	void 비우면_닉네임_없음(String raw) {
 		assertThat(Nickname.normalize(raw)).isNull();
 	}
@@ -58,7 +64,8 @@ class NicknameTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"민\n지", "민\r지", "민\t지", "민\u0000지", "민 지", "민 지", "민\u007F지"})
+	@ValueSource(strings = {"민\n지", "민\r지", "민\t지", "민\u0000지", "민 지", "민 지", "민\u007F지",
+			"\n민지", "민지\n", " 민지\t", "\n"})
 	void 줄바꿈과_제어_문자는_안_된다(String raw) {
 		assertInvalid(raw);
 	}
