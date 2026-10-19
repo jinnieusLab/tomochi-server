@@ -14,8 +14,10 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,8 +95,13 @@ class RealtimeConnectionTest {
 		assertThat(imac.next().get("type").asString()).isEqualTo("friend.added");
 		macbook.close();
 		imac.close();
-		Thread.sleep(200);
-		assertThat(userMessageSender.send(userId, "friend.added", Map.of())).isFalse();
+		// 서버가 연결 해제를 처리할 때까지 기다려요.
+		boolean stillSent = true;
+		for (int i = 0; i < 50 && stillSent; i++) {
+			Thread.sleep(100);
+			stillSent = userMessageSender.send(userId, "friend.added", Map.of());
+		}
+		assertThat(stillSent).isFalse();
 	}
 
 	@Test
@@ -153,12 +160,13 @@ class RealtimeConnectionTest {
 		client.session = new StandardWebSocketClient()
 				.execute(client, headers, URI.create("ws://localhost:" + port + "/api/v1/ws"))
 				.get(5, TimeUnit.SECONDS);
+		client.awaitReady();
 		return client;
 	}
 
 	static class Client extends TextWebSocketHandler {
 
-		private final BlockingQueue<String> received = new LinkedBlockingQueue<>();
+		private final BlockingDeque<String> received = new LinkedBlockingDeque<>();
 		private final JsonMapper jsonMapper;
 		WebSocketSession session;
 
@@ -173,6 +181,27 @@ class RealtimeConnectionTest {
 
 		void send(String payload) throws Exception {
 			session.sendMessage(new TextMessage(payload));
+		}
+
+		/**
+		 * 클라이언트 쪽 연결이 끝나도 서버가 세션을 등록하기 전일 수 있어요. ping을 보내 pong을 받으면 서버가 등록을 마친 거예요.
+		 * 그 사이에 온 다른 메시지(squish.pending, token.expiring 등)는 받은 순서대로 다시 넣어 둬요.
+		 */
+		void awaitReady() throws Exception {
+			send("{\"type\": \"ping\", \"data\": {}}");
+			List<String> early = new ArrayList<>();
+			for (int i = 0; i < 20; i++) {
+				String payload = received.poll(5, TimeUnit.SECONDS);
+				assertThat(payload).as("연결 후 pong이 와야 해요").isNotNull();
+				if (jsonMapper.readTree(payload).get("type").asString().equals("pong")) {
+					for (int j = early.size() - 1; j >= 0; j--) {
+						received.addFirst(early.get(j));
+					}
+					return;
+				}
+				early.add(payload);
+			}
+			throw new AssertionError("pong이 오지 않았어요");
 		}
 
 		JsonNode next() throws Exception {

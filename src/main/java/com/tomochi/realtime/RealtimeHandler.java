@@ -135,7 +135,12 @@ public class RealtimeHandler extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
 		sender.unregister(userId(session), session);
-		presenceService.disconnected(authUser(session));
+		try {
+			presenceService.disconnected(authUser(session));
+		} catch (RuntimeException e) {
+			// 서버가 내려가는 중이면 Redis가 먼저 닫혀 있어요. 상태는 90초 TTL로 정리돼요.
+			log.debug("연결 해제 후 상태 정리 실패: {}", e.getClass().getSimpleName());
+		}
 		ScheduledFuture<?>[] scheduled = timers.remove(session.getId());
 		if (scheduled != null) {
 			for (ScheduledFuture<?> future : scheduled) {
