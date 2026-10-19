@@ -27,7 +27,9 @@ public class UnfriendService {
 				.orElseThrow(() -> new BusinessException(FriendErrorCode.FRIEND_NOT_FOUND));
 		jdbcTemplate.update("DELETE FROM friend_setting WHERE (owner_id = ? AND friend_id = ?) OR (owner_id = ? AND friend_id = ?)",
 				userId, friendId, friendId, userId);
-		// 둘이 함께한 날(TGTR-1)·안 받은 꾹(SQSH-1) 테이블이 생기면 여기서 같이 지워요.
+		jdbcTemplate.update("DELETE FROM squish WHERE (from_user_id = ? AND to_user_id = ?) OR (from_user_id = ? AND to_user_id = ?)",
+				userId, friendId, friendId, userId);
+		// 둘이 함께한 날(TGTR-1) 테이블이 생기면 여기서 같이 지워요.
 		friendshipRepository.delete(friendship);
 	}
 }

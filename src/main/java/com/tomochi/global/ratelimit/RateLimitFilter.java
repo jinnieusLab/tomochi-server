@@ -103,6 +103,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
 					new Rule("rl:friend-add:m:" + who, properties.friendAddPerMinute(), properties.window()),
 					new Rule("rl:friend-add:d:" + who, properties.friendAddPerDay(), Duration.ofDays(1)));
 		}
+		if (HttpMethod.POST.matches(method) && uri.startsWith("/api/v1/friends/") && uri.endsWith("/squishes")) {
+			return List.of(new Rule("rl:squish:" + who, properties.squishPerUser(), properties.window()));
+		}
 		return List.of(new Rule("rl:api:" + who, properties.defaultPerUser(), properties.window()));
 	}
 
