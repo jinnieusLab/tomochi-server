@@ -22,6 +22,7 @@ tomochi:
     default-per-user: 100000
     friend-add-per-minute: 100000
     friend-add-per-day: 100000
+    squish-per-user: 100000
   auth:
     # 테스트 전용 키 (Base64, 48바이트)
     jwt-secret: dGVzdC1vbmx5LWp3dC1zZWNyZXQtZm9yLXRvbW9jaGktc2VydmVyLXRlc3RzISE=
