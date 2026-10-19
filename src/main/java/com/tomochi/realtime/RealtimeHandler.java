@@ -49,6 +49,8 @@ public class RealtimeHandler extends TextWebSocketHandler {
 	private static final Duration IDLE_CHECK_INTERVAL = Duration.ofSeconds(10);
 	private static final int MAX_MESSAGE_BYTES = 16 * 1024;
 	private static final String LAST_ACTIVITY = "lastActivity";
+	/** 모든 전송이 거치는 동기화된 세션. 원래 세션에 따로 쓰면 다른 스레드의 전송과 겹쳐 Tomcat이 거절해요. */
+	private static final String SAFE_SESSION = "safeSession";
 
 	private final LocalUserMessageSender sender;
 	private final PresenceService presenceService;
@@ -77,6 +79,7 @@ public class RealtimeHandler extends TextWebSocketHandler {
 		touch(session);
 		Long userId = userId(session);
 		WebSocketSession safe = sender.register(userId, session);
+		session.getAttributes().put(SAFE_SESSION, safe);
 		scheduleTokenExpiry(session, safe);
 		ScheduledFuture<?> idleCheck = taskScheduler.scheduleAtFixedRate(() -> closeIfIdle(session, safe),
 				clock.instant().plus(IDLE_CHECK_INTERVAL), IDLE_CHECK_INTERVAL);
@@ -179,8 +182,9 @@ public class RealtimeHandler extends TextWebSocketHandler {
 		return merged;
 	}
 
-	private void reply(WebSocketSession session, String type, Object data) throws IOException {
-		session.sendMessage(toText(type, data));
+	private void reply(WebSocketSession session, String type, Object data) {
+		WebSocketSession safe = (WebSocketSession) session.getAttributes().getOrDefault(SAFE_SESSION, session);
+		sender.sendTo(safe, toText(type, data));
 	}
 
 	private TextMessage toText(String type, Object data) {

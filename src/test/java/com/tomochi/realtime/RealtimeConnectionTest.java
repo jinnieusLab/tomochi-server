@@ -105,6 +105,37 @@ class RealtimeConnectionTest {
 	}
 
 	@Test
+	void 답장과_서버_알림이_동시에_나가도_잃지_않는다() throws Exception {
+		Long userId = newUser();
+		Client client = connect(accessToken(userId));
+		int count = 50;
+
+		Thread pusher = Thread.ofVirtual().start(() -> {
+			for (int i = 0; i < count; i++) {
+				userMessageSender.send(userId, "friend.added", Map.of("n", i));
+			}
+		});
+		for (int i = 0; i < count; i++) {
+			client.send("{\"type\": \"ping\", \"data\": {}}");
+		}
+		pusher.join();
+
+		int pongs = 0;
+		int pushes = 0;
+		for (int i = 0; i < count * 2; i++) {
+			String type = client.next().get("type").asString();
+			if (type.equals("pong")) {
+				pongs++;
+			} else if (type.equals("friend.added")) {
+				pushes++;
+			}
+		}
+		assertThat(pongs).isEqualTo(count);
+		assertThat(pushes).isEqualTo(count);
+		client.close();
+	}
+
+	@Test
 	void presence_update_메시지로_하트비트를_보낸다() throws Exception {
 		Long userId = newUser();
 		Client client = connect(accessToken(userId));
