@@ -7,6 +7,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -61,38 +63,47 @@ public class RateLimitFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws ServletException, IOException {
-		Rule rule = ruleFor(request);
-		RateLimiter.Result result;
+		long retryAfterSeconds = 0;
 		try {
-			result = rateLimiter.acquire(rule.key(), rule.limit(), properties.window());
+			for (Rule rule : rulesFor(request)) {
+				RateLimiter.Result result = rateLimiter.acquire(rule.key(), rule.limit(), rule.window());
+				if (!result.allowed()) {
+					retryAfterSeconds = Math.max(retryAfterSeconds, result.retryAfterSeconds());
+				}
+			}
 		} catch (RuntimeException e) {
 			log.warn("요청 제한 확인 실패, 통과시켜요: {}", e.getClass().getSimpleName());
 			chain.doFilter(request, response);
 			return;
 		}
-		if (!result.allowed()) {
-			response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(result.retryAfterSeconds()));
-			errorResponseWriter.write(response, CommonErrorCode.RATE_LIMITED, result.retryAfterSeconds());
+		if (retryAfterSeconds > 0) {
+			response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
+			errorResponseWriter.write(response, CommonErrorCode.RATE_LIMITED, retryAfterSeconds);
 			return;
 		}
 		chain.doFilter(request, response);
 	}
 
-	private Rule ruleFor(HttpServletRequest request) {
+	private List<Rule> rulesFor(HttpServletRequest request) {
 		String uri = request.getRequestURI();
 		String method = request.getMethod();
 		String ip = request.getRemoteAddr();
 		if (uri.startsWith(AUTH_PREFIX)
 				|| (HttpMethod.POST.matches(method)
 				&& (uri.equals("/api/v1/auth/token") || uri.equals("/api/v1/auth/refresh")))) {
-			return new Rule("rl:auth:" + ip, properties.authPerIp());
+			return List.of(new Rule("rl:auth:" + ip, properties.authPerIp(), properties.window()));
 		}
 		String subject = currentUserId();
 		String who = subject != null ? "u" + subject : "ip" + ip;
 		if (HttpMethod.POST.matches(method) && uri.equals("/api/v1/activity/segments")) {
-			return new Rule("rl:upload:" + who, properties.uploadPerUser());
+			return List.of(new Rule("rl:upload:" + who, properties.uploadPerUser(), properties.window()));
 		}
-		return new Rule("rl:api:" + who, properties.defaultPerUser());
+		if (HttpMethod.POST.matches(method) && uri.equals("/api/v1/friends")) {
+			return List.of(
+					new Rule("rl:friend-add:m:" + who, properties.friendAddPerMinute(), properties.window()),
+					new Rule("rl:friend-add:d:" + who, properties.friendAddPerDay(), Duration.ofDays(1)));
+		}
+		return List.of(new Rule("rl:api:" + who, properties.defaultPerUser(), properties.window()));
 	}
 
 	private static String currentUserId() {
@@ -100,6 +111,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
 		return authentication != null && authentication.getPrincipal() instanceof Jwt jwt ? jwt.getSubject() : null;
 	}
 
-	private record Rule(String key, int limit) {
+	private record Rule(String key, int limit, Duration window) {
 	}
 }
