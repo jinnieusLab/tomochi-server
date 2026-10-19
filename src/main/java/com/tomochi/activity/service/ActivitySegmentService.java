@@ -46,7 +46,7 @@ public class ActivitySegmentService {
 				adjusted++;
 			}
 			// 한 요청에 같은 id가 두 번 오면 DB와 같은 규칙(넓히기)으로 미리 합쳐요.
-			accepted.merge(segment.clientSegmentId(), result.range(), ActivitySegmentService::widen);
+			accepted.merge(result.clientSegmentId(), result.range(), ActivitySegmentService::widen);
 		}
 
 		if (!accepted.isEmpty()) {

@@ -3,7 +3,8 @@ package com.tomochi.activity.domain;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.UUID;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * 앱이 보낸 구간 하나를 검증해요. 서버가 시간을 직접 계산하려고 합계가 아니라 구간(시작·끝)을 받아요.
@@ -25,13 +26,19 @@ public final class SegmentPolicy {
 	public static final Duration DAILY_CAP = Duration.ofHours(20);
 	public static final int MAX_SEGMENTS_PER_REQUEST = 200;
 
+	/** ASCII 16진수만. {@code UUID.fromString}은 전각 숫자 같은 비ASCII 숫자도 받아들일 수 있어요. */
+	private static final Pattern UUID_FORMAT =
+			Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+
 	private SegmentPolicy() {
 	}
 
 	public static Result check(String clientSegmentId, Instant start, Instant end, Instant now) {
-		if (!isUuid(clientSegmentId)) {
+		if (clientSegmentId == null || !UUID_FORMAT.matcher(clientSegmentId).matches()) {
 			return Result.rejected(RejectReason.INVALID_ID);
 		}
+		// 대소문자만 다른 같은 UUID가 다른 행이 되지 않게 소문자로 맞춰요 (컬럼은 ascii_bin이라 대소문자를 구분해요).
+		String id = clientSegmentId.toLowerCase(Locale.ROOT);
 		if (start == null || end == null || !end.isAfter(start)) {
 			return Result.rejected(RejectReason.INVALID_RANGE);
 		}
@@ -54,29 +61,18 @@ public final class SegmentPolicy {
 		if (Duration.between(start, end).compareTo(MAX_LENGTH) > 0) {
 			return Result.rejected(RejectReason.TOO_LONG);
 		}
-		return new Result(new TimeRange(start, end), adjusted, null);
-	}
-
-	private static boolean isUuid(String value) {
-		if (value == null || value.length() != 36) {
-			return false;
-		}
-		try {
-			UUID.fromString(value);
-			return true;
-		} catch (IllegalArgumentException e) {
-			return false;
-		}
+		return new Result(id, new TimeRange(start, end), adjusted, null);
 	}
 
 	/**
-	 * @param range    저장할 구간 (거절이면 null)
-	 * @param adjusted 미래 시각을 잘랐는지
+	 * @param clientSegmentId 저장할 id (소문자로 맞춤, 거절이면 null)
+	 * @param range           저장할 구간 (거절이면 null)
+	 * @param adjusted        미래 시각을 잘랐는지
 	 */
-	public record Result(TimeRange range, boolean adjusted, RejectReason rejectReason) {
+	public record Result(String clientSegmentId, TimeRange range, boolean adjusted, RejectReason rejectReason) {
 
 		static Result rejected(RejectReason reason) {
-			return new Result(null, false, reason);
+			return new Result(null, null, false, reason);
 		}
 
 		public boolean isAccepted() {
