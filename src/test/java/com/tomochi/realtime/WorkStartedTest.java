@@ -117,6 +117,7 @@ class WorkStartedTest {
 		client.session = new StandardWebSocketClient()
 				.execute(client, headers, URI.create("ws://localhost:" + port + "/api/v1/ws"))
 				.get(5, TimeUnit.SECONDS);
+		client.awaitReady();
 		return client;
 	}
 
