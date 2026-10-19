@@ -18,7 +18,7 @@ import tools.jackson.databind.json.JsonMapper;
 class RateLimitFilterTest {
 
 	private final RateLimiter rateLimiter = mock(RateLimiter.class);
-	private final RateLimitProperties properties = new RateLimitProperties(true, Duration.ofMinutes(1), 20, 6, 120);
+	private final RateLimitProperties properties = new RateLimitProperties(true, Duration.ofMinutes(1), 20, 6, 120, 10, 50);
 	private final RateLimitFilter filter = new RateLimitFilter(RateLimitFilter.Stage.API, rateLimiter, properties,
 			new ErrorResponseWriter(JsonMapper.builder().build()));
 

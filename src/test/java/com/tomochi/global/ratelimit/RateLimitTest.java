@@ -27,7 +27,9 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 @TestPropertySource(properties = {
 		"tomochi.rate-limit.auth-per-ip=3",
 		"tomochi.rate-limit.upload-per-user=2",
-		"tomochi.rate-limit.default-per-user=4"
+		"tomochi.rate-limit.default-per-user=4",
+		"tomochi.rate-limit.friend-add-per-minute=2",
+		"tomochi.rate-limit.friend-add-per-day=3"
 })
 class RateLimitTest {
 
@@ -93,6 +95,18 @@ class RateLimitTest {
 	}
 
 	@Test
+	void 친구_맺기는_1분_한도와_하루_한도를_같이_본다() throws Exception {
+		String me = accessTokenOfNewUser();
+		for (int i = 0; i < 2; i++) {
+			addFriend(me).andExpect(status().isNotFound());
+		}
+
+		addFriend(me)
+				.andExpect(status().isTooManyRequests())
+				.andExpect(jsonPath("$.code").value("RATE_LIMITED"));
+	}
+
+	@Test
 	void Swagger_같은_API_밖_경로는_세지_않는다() throws Exception {
 		RequestPostProcessor ip = randomIp();
 		for (int i = 0; i < 6; i++) {
@@ -111,6 +125,13 @@ class RateLimitTest {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"segments\": []}"));
+	}
+
+	private org.springframework.test.web.servlet.ResultActions addFriend(String accessToken) throws Exception {
+		return mockMvc.perform(post("/api/v1/friends")
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"inviteCode\": \"ZZZZZZ\"}"));
 	}
 
 	private String accessTokenOfNewUser() {
