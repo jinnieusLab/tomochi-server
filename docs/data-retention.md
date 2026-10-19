@@ -7,7 +7,7 @@
 | 작업 구간 `activity_segment` | 끝난 지 186일 | `ActivityRetentionJob` | 04:30 |
 | 하루 요약 캐시 `daily_activity` | 187일 전 날짜까지 | `ActivityRetentionJob` | 04:30 |
 | 둘이 함께한 날 `together_daily` | 6개월 | (TGTR-1에서 더함) | |
-| 꾹 `squish` | 전달 후 30일, 안 받은 것도 30일 | (SQSH-3에서 더함) | |
+| 꾹 `squish` | 보낸 지 30일 (받았든 안 받았든) | `SquishCleanupJob` | 04:35 |
 | 접속 상태 (Redis) | 하트비트가 끊기면 90초 | Redis TTL | |
 | 로그인 중 상태·1회용 코드 (Redis) | 10분·60초 | Redis TTL | |
 | Refresh Token `refresh_token` | 만료·폐기 후 7일 | `RefreshTokenCleanupJob` | 04:50 |

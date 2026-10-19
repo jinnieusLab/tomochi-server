@@ -5,6 +5,8 @@ import com.tomochi.presence.domain.PresenceStatus;
 import com.tomochi.presence.domain.StatusIcon;
 import com.tomochi.presence.dto.PresenceRequest;
 import com.tomochi.presence.service.PresenceService;
+import com.tomochi.squish.dto.PendingSquishesResponse;
+import com.tomochi.squish.service.PendingSquishService;
 import com.tomochi.squish.service.SquishDelivery;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,17 +53,19 @@ public class RealtimeHandler extends TextWebSocketHandler {
 	private final LocalUserMessageSender sender;
 	private final PresenceService presenceService;
 	private final SquishDelivery squishDelivery;
+	private final PendingSquishService pendingSquishService;
 	private final JsonMapper jsonMapper;
 	private final TaskScheduler taskScheduler;
 	private final Clock clock;
 	private final Map<String, ScheduledFuture<?>[]> timers = new java.util.concurrent.ConcurrentHashMap<>();
 
 	public RealtimeHandler(LocalUserMessageSender sender, PresenceService presenceService, SquishDelivery squishDelivery,
-			JsonMapper jsonMapper,
+			PendingSquishService pendingSquishService, JsonMapper jsonMapper,
 			@Qualifier(RealtimeSchedulerConfig.REALTIME_SCHEDULER) TaskScheduler taskScheduler, Clock clock) {
 		this.sender = sender;
 		this.presenceService = presenceService;
 		this.squishDelivery = squishDelivery;
+		this.pendingSquishService = pendingSquishService;
 		this.jsonMapper = jsonMapper;
 		this.taskScheduler = taskScheduler;
 		this.clock = clock;
@@ -77,6 +81,15 @@ public class RealtimeHandler extends TextWebSocketHandler {
 		ScheduledFuture<?> idleCheck = taskScheduler.scheduleAtFixedRate(() -> closeIfIdle(session, safe),
 				clock.instant().plus(IDLE_CHECK_INTERVAL), IDLE_CHECK_INTERVAL);
 		timers.merge(session.getId(), new ScheduledFuture<?>[] {idleCheck}, RealtimeHandler::concat);
+		sendPendingSquishes(userId, safe);
+	}
+
+	/** 연결되면 꺼져 있던 동안의 꾹을 친구별로 묶어 한 번 보내요. 앱은 알림을 한 번 띄우고 ack해요. */
+	private void sendPendingSquishes(Long userId, WebSocketSession safe) {
+		PendingSquishesResponse pending = pendingSquishService.findPending(userId);
+		if (!pending.items().isEmpty()) {
+			sender.sendTo(safe, toText("squish.pending", pending));
+		}
 	}
 
 	@Override
