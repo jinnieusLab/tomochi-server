@@ -52,7 +52,7 @@ public class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(PUBLIC_PATHS).permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/v1/auth/token").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/v1/auth/token", "/api/v1/auth/refresh").permitAll()
 						.anyRequest().authenticated())
 				.oauth2Login(login -> login
 						.authorizationEndpoint(endpoint -> endpoint

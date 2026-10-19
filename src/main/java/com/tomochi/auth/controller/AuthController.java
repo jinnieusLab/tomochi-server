@@ -1,8 +1,10 @@
 package com.tomochi.auth.controller;
 
+import com.tomochi.auth.dto.RefreshRequest;
 import com.tomochi.auth.dto.TokenRequest;
 import com.tomochi.auth.dto.TokenResponse;
 import com.tomochi.auth.service.AuthCodeService;
+import com.tomochi.auth.service.RefreshTokenRotationService;
 import com.tomochi.auth.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +23,7 @@ public class AuthController {
 
 	private final AuthCodeService authCodeService;
 	private final TokenService tokenService;
+	private final RefreshTokenRotationService refreshTokenRotationService;
 
 	@Operation(
 			summary = "1회용 코드를 토큰으로 바꾸기",
@@ -32,5 +35,17 @@ public class AuthController {
 	public TokenResponse token(@Valid @RequestBody TokenRequest request) {
 		Long userId = authCodeService.consume(request.code(), request.codeVerifier());
 		return tokenService.issueForNewLogin(userId, request.deviceNameOrDefault());
+	}
+
+	@Operation(
+			summary = "토큰 재발급",
+			description = """
+					Access Token이 만료되면(`TOKEN_EXPIRED`) Refresh Token으로 새 토큰 한 쌍을 받아요. 쓴 Refresh Token은 바로 폐기돼요.
+					- `401 REFRESH_TOKEN_INVALID`: 없거나 만료됨 → 다시 로그인
+					- `409 REFRESH_TOKEN_ROTATED`: 같은 토큰으로 보낸 다른 요청이 방금 성공함 → 그 요청이 받은 토큰을 사용
+					- `403 REFRESH_TOKEN_REUSED`: 폐기된 토큰 재사용(탈취 의심) → 이 기기 토큰이 모두 끊김, 다시 로그인""")
+	@PostMapping("/refresh")
+	public TokenResponse refresh(@Valid @RequestBody RefreshRequest request) {
+		return refreshTokenRotationService.rotate(request.refreshToken());
 	}
 }
