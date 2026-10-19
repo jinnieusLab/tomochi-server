@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param jwtSecret       HS256 서명 키. Base64로 인코딩한 32바이트 이상 값 ({@code openssl rand -base64 48})
  * @param accessTokenTtl  Access Token 수명. 블랙리스트가 없어서 로그아웃해도 이만큼은 유효해요
  * @param refreshTokenTtl Refresh Token 수명. 몇 주씩 켜 두는 앱이라 길게 둬요
+ * @param refreshReuseGrace 회전으로 폐기된 토큰이 이 시간 안에 다시 오면 탈취가 아니라 동시 요청으로 봐요
  * @param authCodeTtl     로그인 직후 앱에 넘기는 1회용 코드 수명
  * @param appRedirectUri  로그인이 끝나면 돌아갈 맥 앱 주소
  */
@@ -19,6 +20,7 @@ public record AuthProperties(
 		@DefaultValue("tomochi") String issuer,
 		@DefaultValue("30m") Duration accessTokenTtl,
 		@DefaultValue("30d") Duration refreshTokenTtl,
+		@DefaultValue("10s") Duration refreshReuseGrace,
 		@DefaultValue("60s") Duration authCodeTtl,
 		@DefaultValue("tomochi://auth/callback") String appRedirectUri
 ) {

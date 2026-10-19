@@ -40,11 +40,15 @@ public class TokenService {
 	/** 새 로그인. 기기 하나에 Refresh Token family 하나를 새로 열어요. */
 	@Transactional
 	public TokenResponse issueForNewLogin(Long userId, String deviceName) {
-		Instant now = clock.instant();
+		return issueInFamily(userId, UUID.randomUUID().toString(), deviceName, clock.instant());
+	}
+
+	/** 회전. 같은 family(같은 기기)에 다음 Refresh Token을 이어 붙여요. 호출하는 쪽 트랜잭션 안에서 돌아요. */
+	TokenResponse issueInFamily(Long userId, String familyId, String deviceName, Instant now) {
 		String refreshToken = randomToken();
 		refreshTokenRepository.save(new RefreshToken(
 				userId,
-				UUID.randomUUID().toString(),
+				familyId,
 				hash(refreshToken),
 				deviceName,
 				now,
