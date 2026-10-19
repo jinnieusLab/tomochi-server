@@ -1,0 +1,9 @@
+# 앱의 관리 포트(8081)에서 지표를 읽어요. 같은 Docker 네트워크 안에서만 닿아요.
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: tomochi-server
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["app:8081"]

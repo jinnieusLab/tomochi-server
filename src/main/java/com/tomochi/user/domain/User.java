@@ -13,9 +13,15 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.UpdateTimestamp;
 
+/**
+ * {@link DynamicUpdate}: 바뀐 컬럼만 UPDATE해요. 기본값(모든 컬럼 UPDATE)이면 닉네임 변경과 펫 변경이 동시에 올 때
+ * 나중에 커밋한 쪽이 읽어 둔 옛 값으로 다른 필드를 덮어써서 먼저 바꾼 값이 사라져요 (lost update).
+ */
 @Entity
+@DynamicUpdate
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -65,6 +71,10 @@ public class User {
 	/** 처음 로그인한 사용자. 닉네임은 비어 있고, 펫은 앱에서 고른 값이에요. */
 	public static User signUp(PetKind petKind, String inviteCode) {
 		return new User(petKind, inviteCode);
+	}
+
+	public void changePetKind(PetKind petKind) {
+		this.petKind = petKind;
 	}
 
 	/** @param nickname {@link Nickname#normalize}를 거친 값. null이면 닉네임 없음 */
