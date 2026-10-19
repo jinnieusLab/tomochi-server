@@ -28,6 +28,7 @@ docker compose up -d
 - [소셜 로그인 흐름과 OAuth 앱 등록](docs/oauth.md)
 - [Dev 배포](docs/deploy.md)
 - [모니터링·로그](docs/monitoring.md)
+- [데이터 보관·삭제](docs/data-retention.md)
 - [설계 결정 0001: 작업 구간 저장 방식](docs/decisions/0001-activity-segment-storage.md)
 
 ## 배포
