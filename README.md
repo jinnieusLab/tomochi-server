@@ -23,6 +23,10 @@ docker compose up -d
 - 기본 프로필은 `local`이에요. 다른 프로필은 `SPRING_PROFILES_ACTIVE=dev`처럼 환경 변수로 정해요.
 - API 문서: http://localhost:8080/swagger-ui.html (`prod`에서는 꺼져 있어요)
 
+## 배포
+
+Dev는 main CI가 통과하면 GitHub Actions가 VPS에 배포해요. 준비 방법은 [docs/deploy.md](docs/deploy.md)에 있어요.
+
 ## 설정
 
 | 파일 | 내용 |
