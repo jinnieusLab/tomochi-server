@@ -30,6 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class TokenService {
 
 	private static final int REFRESH_TOKEN_BYTES = 32;
+	/** Access Token에 싣는 세션(=Refresh Token family) id. 로그아웃할 때 어느 기기인지 알아요. */
+	public static final String SESSION_ID_CLAIM = "sid";
 
 	private final SecureRandom random = new SecureRandom();
 	private final JwtEncoder jwtEncoder;
@@ -53,13 +55,14 @@ public class TokenService {
 				deviceName,
 				now,
 				now.plus(authProperties.refreshTokenTtl())));
-		return new TokenResponse(accessToken(userId, now), refreshToken, authProperties.accessTokenTtl().toSeconds());
+		return new TokenResponse(accessToken(userId, familyId, now), refreshToken, authProperties.accessTokenTtl().toSeconds());
 	}
 
-	private String accessToken(Long userId, Instant now) {
+	private String accessToken(Long userId, String familyId, Instant now) {
 		JwtClaimsSet claims = JwtClaimsSet.builder()
 				.issuer(authProperties.issuer())
 				.subject(String.valueOf(userId))
+				.claim(SESSION_ID_CLAIM, familyId)
 				.issuedAt(now)
 				.expiresAt(now.plus(authProperties.accessTokenTtl()))
 				.build();
