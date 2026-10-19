@@ -6,6 +6,7 @@ import com.tomochi.friend.dto.FriendResponse;
 import com.tomochi.friend.dto.FriendSummaryResponse;
 import com.tomochi.friend.service.FriendListService;
 import com.tomochi.friend.service.FriendSettingService;
+import com.tomochi.friend.service.UnfriendService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -31,6 +32,7 @@ public class FriendController implements FriendApi {
 	private final FriendshipFacade friendshipFacade;
 	private final FriendListService friendListService;
 	private final FriendSettingService friendSettingService;
+	private final UnfriendService unfriendService;
 
 	@Override
 	@PostMapping
@@ -56,6 +58,13 @@ public class FriendController implements FriendApi {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void hide(@CurrentUser AuthUser user, @PathVariable Long friendId) {
 		friendSettingService.setHidden(user.userId(), friendId, true);
+	}
+
+	@Override
+	@DeleteMapping("/{friendId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void unfriend(@CurrentUser AuthUser user, @PathVariable Long friendId) {
+		unfriendService.unfriend(user.userId(), friendId);
 	}
 
 	@Override
