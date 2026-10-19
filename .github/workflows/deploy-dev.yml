@@ -1,0 +1,114 @@
+name: Deploy Dev
+
+# main의 CI가 통과하면 Dev에 배포해요. Actions 탭에서 손으로 돌릴 수도 있어요.
+# VPS가 준비되기 전에는 저장소 변수 DEPLOY_DEV_ENABLED를 두지 않아서 건너뛰어요.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/jinnieuslab/tomochi-server
+
+jobs:
+  image:
+    if: >-
+      vars.DEPLOY_DEV_ENABLED == 'true' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - id: tag
+        run: echo "tag=sha-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # 테스트는 CI에서 이미 통과했어요.
+      - name: Build jar
+        run: ./gradlew bootJar --console=plain
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.tag }}
+            ${{ env.IMAGE }}:dev
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: dev
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.DEV_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEV_SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_deploy
+          echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+
+      # 배포 파일(compose, nginx 설정, 스크립트)을 VPS와 맞춰요. .env와 인증서는 VPS에만 있어요.
+      - name: Copy deploy files
+        env:
+          TARGET: ${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }}
+        run: |
+          ssh -i ~/.ssh/id_deploy "$TARGET" 'mkdir -p ~/tomochi'
+          scp -i ~/.ssh/id_deploy -r deploy/docker-compose.yml deploy/deploy.sh deploy/init-letsencrypt.sh deploy/nginx "$TARGET":~/tomochi/
+
+      # GITHUB_TOKEN은 이 실행이 끝나면 만료돼요. 이미지를 받은 뒤 바로 로그아웃해요.
+      - name: Deploy
+        env:
+          TARGET: ${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }}
+          TAG: ${{ needs.image.outputs.tag }}
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh -i ~/.ssh/id_deploy "$TARGET" "
+            set -e
+            echo '$REGISTRY_TOKEN' | docker login ghcr.io -u '$REGISTRY_USER' --password-stdin
+            trap 'docker logout ghcr.io' EXIT
+            IMAGE_TAG='$TAG' ~/tomochi/deploy.sh
+          "
