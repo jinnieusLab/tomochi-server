@@ -73,6 +73,11 @@ public class User {
 		return new User(petKind, inviteCode);
 	}
 
+	/** @param timezone {@link Timezone#validate}를 거친 IANA 시간대 이름 */
+	public void changeTimezone(String timezone) {
+		this.timezone = timezone;
+	}
+
 	public void changePetKind(PetKind petKind) {
 		this.petKind = petKind;
 	}
