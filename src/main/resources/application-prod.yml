@@ -7,3 +7,7 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+server:
+  # Nginx 뒤에서 X-Forwarded-* 헤더로 원래 주소·https 여부를 알아요.
+  forward-headers-strategy: native
