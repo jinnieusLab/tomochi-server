@@ -96,7 +96,7 @@ jobs:
           TARGET: ${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }}
         run: |
           ssh -i ~/.ssh/id_deploy "$TARGET" 'mkdir -p ~/tomochi'
-          scp -i ~/.ssh/id_deploy -r deploy/docker-compose.yml deploy/deploy.sh deploy/init-letsencrypt.sh deploy/nginx "$TARGET":~/tomochi/
+          scp -i ~/.ssh/id_deploy -r deploy/docker-compose.yml deploy/deploy.sh deploy/init-letsencrypt.sh deploy/nginx deploy/monitoring "$TARGET":~/tomochi/
 
       # GITHUB_TOKEN은 이 실행이 끝나면 만료돼요. 이미지를 받은 뒤 바로 로그아웃해요.
       - name: Deploy
