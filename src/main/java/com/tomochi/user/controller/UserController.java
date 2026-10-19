@@ -5,6 +5,10 @@ import com.tomochi.global.security.CurrentUser;
 import com.tomochi.user.dto.UpdateUserRequest;
 import com.tomochi.user.dto.UserResponse;
 import com.tomochi.user.service.UserService;
+import com.tomochi.user.service.WithdrawService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController implements UserApi {
 
 	private final UserService userService;
+	private final WithdrawService withdrawService;
 
 	@Override
 	@GetMapping
@@ -29,5 +34,12 @@ public class UserController implements UserApi {
 	@PatchMapping
 	public UserResponse update(@CurrentUser AuthUser user, @RequestBody UpdateUserRequest request) {
 		return userService.updateUser(user.userId(), request);
+	}
+
+	@Override
+	@DeleteMapping
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void withdraw(@CurrentUser AuthUser user) {
+		withdrawService.withdraw(user.userId());
 	}
 }

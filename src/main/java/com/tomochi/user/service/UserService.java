@@ -42,6 +42,7 @@ public class UserService {
 
 	private User getUser(Long userId) {
 		return userRepository.findById(userId)
+				.filter(user -> !user.isWithdrawn())
 				.orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 	}
 }
