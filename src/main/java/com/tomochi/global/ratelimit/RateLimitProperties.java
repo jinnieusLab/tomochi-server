@@ -10,6 +10,8 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param authPerIp       로그인 시작·토큰 교환·재발급, IP당
  * @param uploadPerUser   작업 구간 업로드, 사용자당
  * @param defaultPerUser  그 밖의 API, 사용자당 (로그인 안 한 요청은 IP당)
+ * @param friendAddPerMinute 초대 코드로 친구 맺기, 사용자당 1분에 (코드 맞히기 방지)
+ * @param friendAddPerDay    초대 코드로 친구 맺기, 사용자당 하루에
  */
 @ConfigurationProperties("tomochi.rate-limit")
 public record RateLimitProperties(
@@ -17,6 +19,8 @@ public record RateLimitProperties(
 		@DefaultValue("1m") Duration window,
 		@DefaultValue("20") int authPerIp,
 		@DefaultValue("6") int uploadPerUser,
-		@DefaultValue("120") int defaultPerUser
+		@DefaultValue("120") int defaultPerUser,
+		@DefaultValue("10") int friendAddPerMinute,
+		@DefaultValue("50") int friendAddPerDay
 ) {
 }
