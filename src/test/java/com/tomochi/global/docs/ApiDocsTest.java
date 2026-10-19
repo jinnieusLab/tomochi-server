@@ -23,11 +23,14 @@ class ApiDocsTest {
 	@Autowired JsonMapper jsonMapper;
 
 	private JsonNode paths;
+	private JsonNode schemas;
 
 	@BeforeEach
 	void setUp() throws Exception {
 		String body = mockMvc.perform(get("/v3/api-docs")).andReturn().getResponse().getContentAsString();
-		paths = jsonMapper.readTree(body).get("paths");
+		JsonNode docs = jsonMapper.readTree(body);
+		paths = docs.get("paths");
+		schemas = docs.at("/components/schemas");
 	}
 
 	@Test
@@ -69,5 +72,31 @@ class ApiDocsTest {
 
 		assertThat(startLogin.at("/summary").asString()).contains("소셜 로그인 시작");
 		assertThat(startLogin.at("/responses").has("302")).isTrue();
+	}
+
+	@Test
+	void 내_정보_바꾸기의_검증_오류가_400에_모인다() {
+		JsonNode examples = paths.at("/~1api~1v1~1me/patch/responses/400/content/application~1json/examples");
+
+		assertThat(examples.has("INVALID_NICKNAME")).isTrue();
+		assertThat(examples.has("INVALID_PET_KIND")).isTrue();
+		assertThat(examples.has("INVALID_TIMEZONE")).isTrue();
+	}
+
+	@Test
+	void 내_정보_바꾸기_요청은_세_필드만_보인다() {
+		JsonNode properties = schemas.at("/UpdateUserRequest/properties");
+
+		assertThat(properties.propertyNames()).containsExactlyInAnyOrder("nickname", "petKind", "timezone");
+	}
+
+	@Test
+	void 구간_올리기_명세가_있다() {
+		JsonNode upload = paths.at("/~1api~1v1~1activity~1segments/post");
+
+		assertThat(upload.at("/tags/0").asString()).isEqualTo("활동 기록");
+		assertThat(upload.at("/responses/400/content/application~1json/examples").has("INVALID_INPUT")).isTrue();
+		assertThat(upload.at("/responses/401/content/application~1json/examples").has("TOKEN_EXPIRED")).isTrue();
+		assertThat(schemas.at("/SegmentRequest/properties/clientSegmentId/example").asString()).isNotBlank();
 	}
 }
