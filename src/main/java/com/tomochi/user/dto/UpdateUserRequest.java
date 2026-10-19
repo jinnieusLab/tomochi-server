@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  *   <li>{@code "nickname": "민지"} → 바꿈</li>
  * </ul>
  */
-public class UpdateMeRequest {
+public class UpdateUserRequest {
 
 	@Schema(description = "앞뒤 공백을 지우고 1~12자. 빈 문자열이나 null이면 지워요", example = "민지", nullable = true)
 	private String nickname;

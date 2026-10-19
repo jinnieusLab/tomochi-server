@@ -20,7 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @IntegrationTest
 @AutoConfigureMockMvc
-class MeTest {
+class FindUserTest {
 
 	@Autowired MockMvc mockMvc;
 	@Autowired OAuthLoginFacade oauthLoginFacade;

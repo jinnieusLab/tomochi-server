@@ -11,7 +11,7 @@ import java.time.Instant;
  * @param statusIcon 작업 중일 때 친구에게 보이는 아이콘 코드. 고르지 않았으면 null
  * @param timezone   IANA 시간대 이름 (예: Asia/Seoul). 하루·이번 주를 나누는 기준이에요
  */
-public record MeResponse(
+public record UserResponse(
 		Long id,
 		String nickname,
 		PetKind petKind,
@@ -21,8 +21,8 @@ public record MeResponse(
 		Instant createdAt
 ) {
 
-	public static MeResponse from(User user) {
-		return new MeResponse(
+	public static UserResponse from(User user) {
+		return new UserResponse(
 				user.getId(),
 				user.getNickname(),
 				user.getPetKind(),
