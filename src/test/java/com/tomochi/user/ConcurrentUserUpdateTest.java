@@ -11,6 +11,7 @@ import com.tomochi.user.domain.UserRepository;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -25,6 +26,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @IntegrationTest
 class ConcurrentUserUpdateTest {
+
+	private static final long TIMEOUT_SECONDS = 10;
 
 	@Autowired UserRepository userRepository;
 	@Autowired TransactionTemplate transactionTemplate;
@@ -44,19 +47,26 @@ class ConcurrentUserUpdateTest {
 		}));
 
 		await(aRead);
-		transactionTemplate.executeWithoutResult(status ->
-				userRepository.findById(userId).orElseThrow().changePetKind(PetKind.BUTTER));
-		bCommitted.countDown();
-		a.get();
+		try {
+			transactionTemplate.executeWithoutResult(status ->
+					userRepository.findById(userId).orElseThrow().changePetKind(PetKind.BUTTER));
+		} finally {
+			// B가 실패해도 A를 풀어 줘요. 안 그러면 A가 끝없이 기다려요.
+			bCommitted.countDown();
+		}
+		a.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
 		User user = userRepository.findById(userId).orElseThrow();
 		assertThat(user.getNickname()).isEqualTo("민지");
 		assertThat(user.getPetKind()).isEqualTo(PetKind.BUTTER);
 	}
 
+	/** A가 래치 전에 실패해도 테스트가 멈추지 않게 제한 시간을 둬요. */
 	private static void await(CountDownLatch latch) {
 		try {
-			latch.await();
+			if (!latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+				throw new IllegalStateException(TIMEOUT_SECONDS + "초 안에 상대 트랜잭션이 진행되지 않았어요");
+			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			throw new IllegalStateException(e);
