@@ -1,5 +1,10 @@
 # nginx 이미지가 시작할 때 ${DOMAIN} 같은 환경 변수를 채워 conf.d/default.conf로 만들어요.
 
+# 접속 기록에는 쿼리 문자열을 남기지 않아요.
+# 로그인 콜백(?code=&state=)의 1회용 코드가 로그 파일에 쌓이지 않게 해요.
+log_format tomochi '$remote_addr [$time_local] "$request_method $uri $server_protocol" '
+                   '$status $body_bytes_sent $request_time';
+
 map $http_upgrade $connection_upgrade {
     default upgrade;
     ''      close;
@@ -8,6 +13,7 @@ map $http_upgrade $connection_upgrade {
 server {
     listen 80;
     server_name ${DOMAIN};
+    access_log /var/log/nginx/access.log tomochi;
 
     # Let's Encrypt 인증서 발급·갱신 확인용
     location /.well-known/acme-challenge/ {
@@ -23,6 +29,7 @@ server {
     listen 443 ssl;
     http2 on;
     server_name ${DOMAIN};
+    access_log /var/log/nginx/access.log tomochi;
 
     ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;

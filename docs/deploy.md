@@ -1,6 +1,6 @@
 # Dev 배포
 
-VPS 1대에 Docker Compose로 앱·MySQL·Redis·Nginx·certbot을 띄워요.
+VPS 1대에 Docker Compose로 앱·MySQL·Redis·Nginx·certbot·Prometheus·Grafana를 띄워요. 모니터링은 [monitoring.md](monitoring.md)에 있어요.
 
 ```text
 GitHub Actions ─ CI 통과 ─▶ 이미지 빌드 ─▶ GHCR ──pull──┐
@@ -53,7 +53,7 @@ Dev 도메인(예: `dev-api.도메인`)의 A 레코드를 VPS IP로 잡아요.
 ### 4. VPS에 배포 폴더와 `.env`
 
 ```bash
-scp -r deploy/docker-compose.yml deploy/deploy.sh deploy/init-letsencrypt.sh deploy/nginx deploy/.env.example deploy@VPS_IP:~/tomochi/
+scp -r deploy/docker-compose.yml deploy/deploy.sh deploy/init-letsencrypt.sh deploy/nginx deploy/monitoring deploy/.env.example deploy@VPS_IP:~/tomochi/
 ssh deploy@VPS_IP
 cd ~/tomochi && cp .env.example .env && chmod 600 .env
 ```
