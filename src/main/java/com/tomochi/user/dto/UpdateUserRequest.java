@@ -19,6 +19,11 @@ public class UpdateUserRequest {
 	private String nickname;
 	private boolean nicknameSent;
 
+	@Schema(description = "펫 종류. 6종 중 하나이고 지울 수 없어요", example = "HOBBANG",
+			allowableValues = {"CHOCO", "BUTTER", "HOBBANG", "SHERBET", "PEANUT", "HONEYCOMB"})
+	private String petKind;
+	private boolean petKindSent;
+
 	public void setNickname(String nickname) {
 		this.nickname = nickname;
 		this.nicknameSent = true;
@@ -30,5 +35,18 @@ public class UpdateUserRequest {
 
 	public String nickname() {
 		return nickname;
+	}
+
+	public void setPetKind(String petKind) {
+		this.petKind = petKind;
+		this.petKindSent = true;
+	}
+
+	public boolean hasPetKind() {
+		return petKindSent;
+	}
+
+	public String petKind() {
+		return petKind;
 	}
 }

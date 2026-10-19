@@ -67,6 +67,10 @@ public class User {
 		return new User(petKind, inviteCode);
 	}
 
+	public void changePetKind(PetKind petKind) {
+		this.petKind = petKind;
+	}
+
 	/** @param nickname {@link Nickname#normalize}를 거친 값. null이면 닉네임 없음 */
 	public void changeNickname(String nickname) {
 		this.nickname = nickname;
