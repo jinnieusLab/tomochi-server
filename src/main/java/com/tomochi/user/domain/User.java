@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Duration;
 import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -29,6 +30,8 @@ public class User {
 
 	/** 시간대를 아직 받지 못했을 때 쓰는 값. 앱이 켜질 때 맥의 시간대로 바꿔요 (USER-5). */
 	public static final String DEFAULT_TIMEZONE = "Asia/Seoul";
+	/** 탈퇴 후 이 기간 안에 다시 로그인하면 계정을 되살려요. 지나면 정리 배치가 모두 지워요. */
+	public static final Duration WITHDRAWAL_GRACE = Duration.ofDays(7);
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -74,6 +77,25 @@ public class User {
 	}
 
 	/** @param timezone {@link Timezone#validate}를 거친 IANA 시간대 이름 */
+	public void withdraw(Instant now) {
+		if (deletedAt == null) {
+			deletedAt = now;
+		}
+	}
+
+	public void restore() {
+		deletedAt = null;
+	}
+
+	public boolean isWithdrawn() {
+		return deletedAt != null;
+	}
+
+	/** 탈퇴했고 유예 기간도 지나서, 남은 데이터를 지워야 하는 계정 */
+	public boolean isPastWithdrawalGrace(Instant now) {
+		return deletedAt != null && !deletedAt.plus(WITHDRAWAL_GRACE).isAfter(now);
+	}
+
 	public void changeTimezone(String timezone) {
 		this.timezone = timezone;
 	}

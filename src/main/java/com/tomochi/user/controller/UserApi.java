@@ -33,4 +33,12 @@ public interface UserApi {
 	@ApiErrorCodes(value = UserErrorCode.class,
 			codes = {"INVALID_NICKNAME", "INVALID_PET_KIND", "INVALID_TIMEZONE", "USER_NOT_FOUND"})
 	UserResponse update(@CurrentUser AuthUser user, UpdateUserRequest request);
+
+	@Operation(summary = "회원 탈퇴", description = """
+			바로 모든 기기에서 로그아웃되고, 친구 목록에서 사라져요.
+			**7일 안에 다시 로그인하면 되살릴 수 있어요.** 7일이 지나면 작업 기록·친구 관계·꾹·토큰이 모두 지워지고,
+			같은 소셜 계정으로 로그인하면 새 계정이 만들어져요.""")
+	@ApiResponse(responseCode = "204", description = "탈퇴됨")
+	@ApiErrorCodes(value = UserErrorCode.class, codes = "USER_NOT_FOUND")
+	void withdraw(@CurrentUser AuthUser user);
 }

@@ -7,6 +7,9 @@ import com.tomochi.user.domain.PetKind;
 import com.tomochi.user.domain.User;
 import com.tomochi.user.domain.UserRepository;
 import com.tomochi.user.service.InviteCodeGenerator;
+import com.tomochi.user.service.UserPurger;
+import java.time.Clock;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,8 @@ public class OAuthLoginService {
 	private final OAuthAccountRepository oauthAccountRepository;
 	private final UserRepository userRepository;
 	private final InviteCodeGenerator inviteCodeGenerator;
+	private final UserPurger userPurger;
+	private final Clock clock;
 
 	/**
 	 * 같은 소셜 계정으로 처음 로그인이 동시에 두 번 오면 둘 다 "없음"을 보고 만들려고 할 수 있어요.
@@ -31,9 +36,20 @@ public class OAuthLoginService {
 	 */
 	@Transactional
 	public Long findOrSignUp(OAuthProvider provider, String providerUserId, PetKind petKind) {
-		return oauthAccountRepository.findByProviderAndProviderUserId(provider, providerUserId)
-				.map(account -> account.getUser().getId())
-				.orElseGet(() -> signUp(provider, providerUserId, petKind));
+		Optional<User> existing = oauthAccountRepository.findByProviderAndProviderUserId(provider, providerUserId)
+				.map(OAuthAccount::getUser);
+		if (existing.isEmpty()) {
+			return signUp(provider, providerUserId, petKind);
+		}
+		User user = existing.get();
+		if (user.isPastWithdrawalGrace(clock.instant())) {
+			// 탈퇴하고 7일이 지났는데 정리 배치가 아직 안 돌았어요. 지금 지우고 새로 가입해요.
+			userPurger.purge(user.getId());
+			return signUp(provider, providerUserId, petKind);
+		}
+		// 7일 안에 다시 로그인하면 되살려요.
+		user.restore();
+		return user.getId();
 	}
 
 	@Transactional(readOnly = true)
