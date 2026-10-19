@@ -55,9 +55,10 @@ public class RefreshTokenRotationService {
 	}
 
 	/**
-	 * 이미 폐기된 토큰이 왔어요. 두 경우를 나눠요.
+	 * 이미 폐기된 토큰이 왔어요. 세 경우를 나눠요.
 	 * <ul>
-	 *   <li>방금(유예 시간 안에) 회전으로 폐기됐고 family에 살아 있는 다음 토큰이 있으면, 같은 토큰으로 동시에 보낸 요청이에요.
+	 *   <li>family에 살아 있는 토큰이 없으면 로그아웃했거나 이미 끊긴 기기예요. 지킬 게 남지 않았으니 401로 다시 로그인하게 해요.</li>
+	 *   <li>방금(유예 시간 안에) 회전으로 폐기됐으면 같은 토큰으로 동시에 보낸 요청이에요.
 	 *       family는 그대로 두고 409로 알려요. 앱은 이긴 요청이 받은 새 토큰을 쓰면 돼요.</li>
 	 *   <li>그 밖에는 재사용이에요. 탈취로 보고 family를 모두 끊고 403.</li>
 	 * </ul>
@@ -69,10 +70,13 @@ public class RefreshTokenRotationService {
 				.findFirst()
 				.orElseThrow();
 		boolean hasActiveSuccessor = family.stream().anyMatch(member -> member.getRevokedAt() == null);
+		if (!hasActiveSuccessor) {
+			return new BusinessException(AuthErrorCode.REFRESH_TOKEN_INVALID);
+		}
+
 		boolean justRotated = current.getRevokedAt() != null
 				&& !current.getRevokedAt().plus(authProperties.refreshReuseGrace()).isBefore(now);
-
-		if (hasActiveSuccessor && justRotated) {
+		if (justRotated) {
 			return new BusinessException(AuthErrorCode.REFRESH_TOKEN_ROTATED);
 		}
 

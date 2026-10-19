@@ -76,6 +76,7 @@ curl -X POST localhost:8080/api/v1/auth/token -H 'Content-Type: application/json
 | 살아 있는 토큰 | 200 새 토큰 한 쌍 | 이어짐 |
 | 없거나 만료된 토큰 | 401 `REFRESH_TOKEN_INVALID` | 그대로 |
 | 10초 안에 회전된 토큰 (같은 토큰으로 보낸 동시 요청) | 409 `REFRESH_TOKEN_ROTATED` | 그대로 |
+| 로그아웃했거나 이미 끊긴 기기의 토큰 (family에 살아 있는 토큰 없음) | 401 `REFRESH_TOKEN_INVALID` | 그대로 (이미 끊김) |
 | 그 밖의 폐기된 토큰 (재사용) | 403 `REFRESH_TOKEN_REUSED` | 모두 폐기 |
 
 ### 왜 이렇게
@@ -85,3 +86,19 @@ curl -X POST localhost:8080/api/v1/auth/token -H 'Content-Type: application/json
 - **진 요청은 잠금 읽기로 다시 봐요.** MySQL 기본 격리 수준(REPEATABLE READ)에서 평범한 SELECT는 트랜잭션 처음의 스냅샷을 읽어서, 방금 이긴 요청이 만든 새 토큰이 안 보여요. `SELECT ... FOR UPDATE`는 지금 커밋된 값을 읽어서 "방금 회전됐는지"를 정확히 판단해요.
 - **10초 유예.** 같은 토큰으로 거의 동시에 온 요청(앱이 재발급을 두 번 보냄)을 탈취로 보면 정상 사용자가 로그아웃돼요. 회전된 지 10초 안이고 family에 살아 있는 다음 토큰이 있을 때만 409로 봐 주고, 그 밖에는 탈취로 봐요.
 - **실패 응답이어도 폐기는 남겨요.** 재사용을 감지하면 family를 폐기한 뒤 403을 던지는데, 예외로 트랜잭션이 롤백되면 폐기도 사라져요. 그래서 `@Transactional(noRollbackFor = BusinessException.class)`예요.
+
+## 로그아웃과 기기별 세션
+
+세션 하나 = Refresh Token family 하나 = 로그인한 기기 하나예요. Access Token에 세션 id(`sid` 클레임)를 실어서 어느 기기의 요청인지 알아요.
+
+| API | 하는 일 |
+| --- | --- |
+| `POST /api/v1/auth/logout` | 지금 기기(`sid`)의 family 폐기. 여러 번 불러도 같아요 |
+| `GET /api/v1/auth/sessions` | 로그인한 기기 목록 `{ id, deviceName, signedInAt, lastUsedAt, current }` |
+| `DELETE /api/v1/auth/sessions/{id}` | 다른 기기 로그아웃. 남의 세션이면 404 `SESSION_NOT_FOUND` |
+
+### 왜 이렇게
+
+- **Access Token 블랙리스트는 만들지 않아요.** 로그아웃해도 이미 받은 Access Token은 만료(최대 30분)까지 유효해요. 매 요청마다 Redis를 보는 대신 수명을 짧게 두고, 다음 재발급에서 막는 쪽을 택했어요.
+- **세션 목록에 테이블을 따로 두지 않아요.** 회전 때문에 family마다 살아 있는 토큰은 늘 하나라, "살아 있는 토큰 목록"이 곧 기기 목록이에요. 로그인 시각은 family의 첫 토큰 시각, 마지막 사용 시각은 지금 토큰이 발급된 시각이에요.
+- **로그아웃된 기기의 토큰은 401이에요.** family에 살아 있는 토큰이 없으면 지킬 게 남지 않아서, 탈취 경고(403) 대신 "다시 로그인"(401)으로 답해요.

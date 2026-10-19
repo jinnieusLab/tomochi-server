@@ -92,8 +92,8 @@ class RefreshTokenRotationTest {
 		assertThat(revokedAt(rotated.refreshToken())).isNotNull();
 		assertThat(activeCountInFamily(familyOf(login.refreshToken()))).isZero();
 		refresh(rotated.refreshToken())
-				.andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.code").value("REFRESH_TOKEN_REUSED"));
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("REFRESH_TOKEN_INVALID"));
 	}
 
 	@Test

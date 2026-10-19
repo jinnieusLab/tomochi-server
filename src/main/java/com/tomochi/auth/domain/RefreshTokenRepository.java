@@ -37,4 +37,22 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select t from RefreshToken t where t.familyId = :familyId")
 	List<RefreshToken> findFamilyForUpdate(@Param("familyId") String familyId);
+
+	/** 기기마다 살아 있는 토큰은 하나예요. 그래서 이 목록이 곧 로그인한 기기 목록이에요. */
+	@Query("select t from RefreshToken t where t.userId = :userId and t.revokedAt is null and t.expiresAt > :now"
+			+ " order by t.createdAt desc")
+	List<RefreshToken> findActiveByUserId(@Param("userId") Long userId, @Param("now") Instant now);
+
+	/** family의 첫 토큰이 만들어진 시각 = 그 기기에서 로그인한 시각 */
+	@Query("select t.familyId as familyId, min(t.createdAt) as signedInAt from RefreshToken t"
+			+ " where t.familyId in :familyIds group by t.familyId")
+	List<FamilySignIn> findSignedInAt(@Param("familyIds") List<String> familyIds);
+
+	boolean existsByFamilyIdAndUserId(String familyId, Long userId);
+
+	interface FamilySignIn {
+		String getFamilyId();
+
+		Instant getSignedInAt();
+	}
 }

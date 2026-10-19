@@ -17,7 +17,8 @@ public enum AuthErrorCode implements ErrorCode {
 	/** 같은 토큰으로 보낸 다른 요청이 방금 회전에 성공했어요. 앱은 그 요청이 받은 새 토큰을 써요. */
 	REFRESH_TOKEN_ROTATED(HttpStatus.CONFLICT, "이미 새 토큰을 받았어요"),
 	/** 폐기된 토큰이 다시 왔어요. 탈취로 보고 그 기기의 토큰을 모두 끊었어요. */
-	REFRESH_TOKEN_REUSED(HttpStatus.FORBIDDEN, "보안을 위해 로그아웃했어요. 다시 로그인해 주세요");
+	REFRESH_TOKEN_REUSED(HttpStatus.FORBIDDEN, "보안을 위해 로그아웃했어요. 다시 로그인해 주세요"),
+	SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "로그인한 기기를 찾을 수 없어요");
 
 	private final HttpStatus status;
 	private final String message;
