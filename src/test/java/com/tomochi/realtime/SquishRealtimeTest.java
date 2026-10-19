@@ -86,6 +86,22 @@ class SquishRealtimeTest {
 	}
 
 	@Test
+	void 연결하면_꺼져_있던_동안의_꾹을_묶어서_한_번_보낸다() throws Exception {
+		Long me = newUser();
+		Long minji = newUser();
+		befriend(me, minji);
+		squishService.send(me, minji);
+
+		Client client = connect(minji);
+
+		JsonNode pending = client.next();
+		assertThat(pending.get("type").asString()).isEqualTo("squish.pending");
+		assertThat(pending.at("/data/items/0/fromFriendId").asLong()).isEqualTo(me);
+		assertThat(pending.at("/data/items/0/count").asInt()).isEqualTo(1);
+		client.close();
+	}
+
+	@Test
 	void 연결이_없으면_전달_대기로_남는다() {
 		Long me = newUser();
 		Long minji = newUser();
