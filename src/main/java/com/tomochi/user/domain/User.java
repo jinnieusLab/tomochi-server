@@ -66,4 +66,9 @@ public class User {
 	public static User signUp(PetKind petKind, String inviteCode) {
 		return new User(petKind, inviteCode);
 	}
+
+	/** @param nickname {@link Nickname#normalize}를 거친 값. null이면 닉네임 없음 */
+	public void changeNickname(String nickname) {
+		this.nickname = nickname;
+	}
 }

@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * 컨트롤러 파라미터에 붙이면 Access Token에서 꺼낸 {@link AuthUser}를 넣어 줘요.
  *
  * <pre>
- * public MeResponse me(@CurrentUser AuthUser user) { ... }
+ * public UserResponse find(@CurrentUser AuthUser user) { ... }
  * </pre>
  */
 @Target(ElementType.PARAMETER)
