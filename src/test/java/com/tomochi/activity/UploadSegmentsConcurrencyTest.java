@@ -11,6 +11,8 @@ import com.tomochi.support.IntegrationTest;
 import com.tomochi.user.domain.PetKind;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +64,9 @@ class UploadSegmentsConcurrencyTest {
 
 		List<Instant> row = jdbcTemplate.queryForObject(
 				"SELECT started_at, ended_at FROM activity_segment WHERE user_id = ? AND client_segment_id = ?",
-				(rs, n) -> List.of(rs.getTimestamp(1).toInstant(), rs.getTimestamp(2).toInstant()), userId, id);
+				(rs, n) -> List.of(
+						rs.getObject(1, LocalDateTime.class).toInstant(ZoneOffset.UTC),
+						rs.getObject(2, LocalDateTime.class).toInstant(ZoneOffset.UTC)), userId, id);
 		Integer rows = jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM activity_segment WHERE user_id = ?", Integer.class, userId);
 

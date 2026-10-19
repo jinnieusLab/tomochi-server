@@ -12,6 +12,8 @@ import com.tomochi.support.IntegrationTest;
 import com.tomochi.user.domain.PetKind;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -149,6 +151,27 @@ class UploadSegmentsTest {
 	}
 
 	@Test
+	void 대소문자만_다른_id는_같은_구간이다() throws Exception {
+		String id = UUID.randomUUID().toString();
+
+		upload(segment(id.toUpperCase(), ago(120), ago(90))).andExpect(status().isOk());
+		upload(segment(id, ago(120), ago(30))).andExpect(status().isOk());
+
+		assertThat(count()).isEqualTo(1);
+		assertThat(stored(id)).isEqualTo(List.of(ago(120), ago(30)));
+	}
+
+	@Test
+	void 목록에_null이_있으면_400() throws Exception {
+		mockMvc.perform(post("/api/v1/activity/segments")
+						.header("Authorization", "Bearer " + accessToken)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"segments\": [null]}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+	}
+
+	@Test
 	void 한_번에_200개까지만_받는다() throws Exception {
 		List<Map<String, Object>> segments = new ArrayList<>();
 		for (int i = 0; i < 201; i++) {
@@ -195,7 +218,9 @@ class UploadSegmentsTest {
 	private List<Instant> stored(String clientSegmentId) {
 		return jdbcTemplate.queryForObject(
 				"SELECT started_at, ended_at FROM activity_segment WHERE user_id = ? AND client_segment_id = ?",
-				(rs, n) -> List.of(rs.getTimestamp(1).toInstant(), rs.getTimestamp(2).toInstant()),
+				(rs, n) -> List.of(
+						rs.getObject(1, LocalDateTime.class).toInstant(ZoneOffset.UTC),
+						rs.getObject(2, LocalDateTime.class).toInstant(ZoneOffset.UTC)),
 				userId, clientSegmentId);
 	}
 

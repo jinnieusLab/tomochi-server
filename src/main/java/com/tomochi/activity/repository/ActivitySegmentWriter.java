@@ -1,8 +1,9 @@
 package com.tomochi.activity.repository;
 
 import com.tomochi.activity.domain.TimeRange;
-import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -33,18 +34,26 @@ public class ActivitySegmentWriter {
 
 	/** @param segments clientSegmentId → 구간. 한 요청 안의 같은 id는 미리 합쳐서 넘겨요 */
 	public void upsert(Long userId, Map<String, TimeRange> segments, Instant now) {
-		Timestamp nowTs = Timestamp.from(now);
+		LocalDateTime nowUtc = utc(now);
 		// 두 요청이 같은 id들을 서로 다른 순서로 잠그면 데드락이 날 수 있어서, 늘 id 순서로 저장해요.
 		List<Object[]> rows = segments.entrySet().stream()
 				.sorted(Map.Entry.comparingByKey())
 				.map(entry -> new Object[] {
 						userId,
 						entry.getKey(),
-						Timestamp.from(entry.getValue().start()),
-						Timestamp.from(entry.getValue().end()),
-						nowTs,
-						nowTs})
+						utc(entry.getValue().start()),
+						utc(entry.getValue().end()),
+						nowUtc,
+						nowUtc})
 				.toList();
 		jdbcTemplate.batchUpdate(UPSERT, rows);
+	}
+
+	/**
+	 * DATETIME(6)은 시간대가 없어서 UTC 벽시계 값으로 넣어요. {@code java.sql.Timestamp}를 넘기면 드라이버가
+	 * JVM 시간대(예: 서울)의 벽시계로 바꿔 저장해서, 같은 JVM에서 읽을 때만 맞고 저장 값은 9시간 어긋나요.
+	 */
+	private static LocalDateTime utc(Instant instant) {
+		return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
 	}
 }
