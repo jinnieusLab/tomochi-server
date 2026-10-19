@@ -3,6 +3,7 @@ package com.tomochi.friend.controller;
 import com.tomochi.friend.dto.AddFriendRequest;
 import com.tomochi.friend.dto.FriendListResponse;
 import com.tomochi.friend.dto.FriendResponse;
+import com.tomochi.friend.dto.FriendSummaryResponse;
 import com.tomochi.friend.error.FriendErrorCode;
 import com.tomochi.global.docs.ApiErrorCodes;
 import com.tomochi.global.error.CommonErrorCode;
@@ -36,4 +37,13 @@ public interface FriendApi {
 	@ApiResponse(responseCode = "200", description = "친구 목록")
 	FriendListResponse list(@CurrentUser AuthUser user,
 			@Parameter(description = "숨긴 친구도 포함할지", example = "false") boolean includeHidden);
+
+	@Operation(summary = "친구 프로필", description = """
+			친구 목록의 한 줄과 같은 정보예요 (펫·닉네임·지금 상태). 숨긴 친구도 볼 수 있어요.
+			둘이 함께한 날 잔디는 `GET /api/v1/friends/{friendId}/together`로 따로 받아요.
+			친구가 아니거나 탈퇴했으면 404예요.""")
+	@ApiResponse(responseCode = "200", description = "친구 프로필")
+	@ApiErrorCodes(value = FriendErrorCode.class, codes = "FRIEND_NOT_FOUND")
+	FriendSummaryResponse find(@CurrentUser AuthUser user,
+			@Parameter(description = "친구 사용자 id", example = "34") Long friendId);
 }

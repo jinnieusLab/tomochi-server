@@ -3,6 +3,7 @@ package com.tomochi.friend.controller;
 import com.tomochi.friend.dto.AddFriendRequest;
 import com.tomochi.friend.dto.FriendListResponse;
 import com.tomochi.friend.dto.FriendResponse;
+import com.tomochi.friend.dto.FriendSummaryResponse;
 import com.tomochi.friend.service.FriendListService;
 import com.tomochi.friend.service.FriendshipFacade;
 import com.tomochi.global.security.AuthUser;
@@ -10,6 +11,7 @@ import com.tomochi.global.security.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,5 +37,11 @@ public class FriendController implements FriendApi {
 	public FriendListResponse list(@CurrentUser AuthUser user,
 			@RequestParam(defaultValue = "false") boolean includeHidden) {
 		return friendListService.findFriends(user.userId(), includeHidden);
+	}
+
+	@Override
+	@GetMapping("/{friendId}")
+	public FriendSummaryResponse find(@CurrentUser AuthUser user, @PathVariable Long friendId) {
+		return friendListService.findFriend(user.userId(), friendId);
 	}
 }
