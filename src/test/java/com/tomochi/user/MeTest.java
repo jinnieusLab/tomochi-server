@@ -1,5 +1,6 @@
 package com.tomochi.user;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,9 +36,11 @@ class MeTest {
 		mockMvc.perform(get("/api/v1/me").header("Authorization", "Bearer " + accessToken))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(userId))
-				.andExpect(jsonPath("$.nickname").doesNotExist())
+				.andExpect(jsonPath("$.nickname").hasJsonPath())
+				.andExpect(jsonPath("$.nickname").value(nullValue()))
 				.andExpect(jsonPath("$.petKind").value("SHERBET"))
-				.andExpect(jsonPath("$.statusIcon").doesNotExist())
+				.andExpect(jsonPath("$.statusIcon").hasJsonPath())
+				.andExpect(jsonPath("$.statusIcon").value(nullValue()))
 				.andExpect(jsonPath("$.timezone").value("Asia/Seoul"))
 				.andExpect(jsonPath("$.inviteCode").value(user.getInviteCode()))
 				.andExpect(jsonPath("$.createdAt").isNotEmpty());
