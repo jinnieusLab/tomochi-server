@@ -26,6 +26,7 @@ docker compose up -d
 ## 문서
 
 - [소셜 로그인 흐름과 OAuth 앱 등록](docs/oauth.md)
+- [실시간 (WebSocket)](docs/realtime.md)
 - [Dev 배포](docs/deploy.md)
 - [모니터링·로그](docs/monitoring.md)
 - [데이터 보관·삭제](docs/data-retention.md)
