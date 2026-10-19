@@ -24,6 +24,10 @@ public class UpdateUserRequest {
 	private String petKind;
 	private boolean petKindSent;
 
+	@Schema(description = "IANA 시간대 이름. 앱이 켜질 때 맥의 시간대와 다르면 보내요", example = "Asia/Seoul")
+	private String timezone;
+	private boolean timezoneSent;
+
 	public void setNickname(String nickname) {
 		this.nickname = nickname;
 		this.nicknameSent = true;
@@ -48,5 +52,18 @@ public class UpdateUserRequest {
 
 	public String petKind() {
 		return petKind;
+	}
+
+	public void setTimezone(String timezone) {
+		this.timezone = timezone;
+		this.timezoneSent = true;
+	}
+
+	public boolean hasTimezone() {
+		return timezoneSent;
+	}
+
+	public String timezone() {
+		return timezone;
 	}
 }

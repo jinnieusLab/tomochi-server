@@ -31,7 +31,8 @@ public class UserController {
 	@Operation(summary = "내 정보 바꾸기", description = """
 			보낸 필드만 바꿔요.
 			- `nickname`: 앞뒤 공백을 지우고 1~12자. 빈 문자열이나 null이면 닉네임을 지워요
-			- `petKind`: CHOCO, BUTTER, HOBBANG, SHERBET, PEANUT, HONEYCOMB 중 하나""")
+			- `petKind`: CHOCO, BUTTER, HOBBANG, SHERBET, PEANUT, HONEYCOMB 중 하나
+			- `timezone`: IANA 시간대 이름 (예: Asia/Seoul). 하루·이번 주를 나누는 기준이에요""")
 	@PatchMapping
 	public UserResponse update(@CurrentUser AuthUser user, @RequestBody UpdateUserRequest request) {
 		return userService.updateUser(user.userId(), request);

@@ -3,6 +3,7 @@ package com.tomochi.user.service;
 import com.tomochi.global.error.BusinessException;
 import com.tomochi.user.domain.Nickname;
 import com.tomochi.user.domain.PetKind;
+import com.tomochi.user.domain.Timezone;
 import com.tomochi.user.domain.User;
 import com.tomochi.user.domain.UserRepository;
 import com.tomochi.user.dto.UserResponse;
@@ -32,6 +33,9 @@ public class UserService {
 		}
 		if (request.hasPetKind()) {
 			user.changePetKind(PetKind.from(request.petKind()));
+		}
+		if (request.hasTimezone()) {
+			user.changeTimezone(Timezone.validate(request.timezone()));
 		}
 		return UserResponse.from(user);
 	}
