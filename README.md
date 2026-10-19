@@ -30,7 +30,19 @@ docker compose up -d
 
 ## 배포
 
-Dev는 main CI가 통과하면 GitHub Actions가 VPS에 배포해요. 준비 방법은 [docs/deploy.md](docs/deploy.md)에 있어요.
+Dev는 develop CI가 통과하면 GitHub Actions가 VPS에 배포해요. 준비 방법은 [docs/deploy.md](docs/deploy.md)에 있어요.
+
+## 브랜치
+
+```text
+feat/#12 ─┐
+fix/#15  ─┼─ PR ─▶ develop ── CI 통과 ─▶ Dev 자동 배포
+chore/#18┘            │
+                      └─ 릴리스 PR ─▶ main (출시, 태그 v0.x.y)
+```
+
+- 이슈 하나 = 브랜치 하나(`{type}/#{이슈번호}`) = PR 하나. 브랜치는 `develop`에서 따고 PR도 `develop`으로 열어요.
+- Dev에서 써 보고 괜찮으면 `develop` → `main` 릴리스 PR을 열어요. Prod 배포는 Prod 서버가 생기면 `main` 기준으로 붙여요.
 
 ## 설정
 

@@ -31,12 +31,13 @@ Type은 이슈 타입과 맞춘다: Feat / Fix / Refactor / Chore / Deploy / Doc
 
 ## 만드는 방법
 
-1. 브랜치는 GitHub Flow: `main`에서 `{type}/#{이슈번호}` 브랜치를 만들어 작업한다 (예: `feat/#3`, `fix/#7`). 설명은 붙이지 않는다.
-2. `git log main..HEAD`와 diff로 변경 내용을 확인하고 요약한다.
+1. 브랜치는 `develop`에서 `{type}/#{이슈번호}` 브랜치를 만들어 작업하고, PR도 `develop`으로 연다 (예: `feat/#3`, `fix/#7`). 설명은 붙이지 않는다.
+   - `main`은 출시용이다. `develop` → `main` 릴리스 PR만 `main`으로 연다 (제목 예: `Release v0.3.0`).
+2. `git log develop..HEAD`와 diff로 변경 내용을 확인하고 요약한다.
 3. push 후 생성:
 
 ```bash
-gh pr create --base main --title "Feat/#3 16×16 픽셀 초코 캐릭터로 교체" --body "$(cat <<'BODY'
+gh pr create --base develop --title "Feat/#3 16×16 픽셀 초코 캐릭터로 교체" --body "$(cat <<'BODY'
 ## 📌 관련 이슈
 - Close #3
 
@@ -49,7 +50,7 @@ gh pr create --base main --title "Feat/#3 16×16 픽셀 초코 캐릭터로 교�
 - 기존 애니메이션과 연결
 
 ## ✅ 체크리스트
-- [x] 브랜치 전략(GitHub Flow)을 준수했나요?
+- [x] 브랜치 전략(develop 대상, 릴리스만 main)을 지켰나요?
 - [x] 앱 빌드·실행 확인
 BODY
 )"

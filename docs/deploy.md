@@ -15,7 +15,7 @@ VPS:  Nginx(80, 443) ─▶ app:8080 ─▶ mysql:3306, redis:6379   (밖으로�
 | `deploy/nginx/templates/default.conf.template` | HTTPS, http→https, WebSocket, `/actuator` 막기 |
 | `deploy/init-letsencrypt.sh` | 처음 한 번 인증서 발급 |
 | `deploy/deploy.sh` | 새 이미지 받아 다시 띄우기 (Actions가 실행) |
-| `.github/workflows/deploy-dev.yml` | main CI 통과 → 이미지 → 배포 |
+| `.github/workflows/deploy-dev.yml` | develop CI 통과 → 이미지 → 배포 |
 
 ## 왜 이렇게
 
@@ -78,7 +78,7 @@ Settings → Environments에서 `dev` 환경을 만들고 Secrets를 넣어요.
 | `DEV_SSH_KEY` | `~/.ssh/tomochi_deploy` (개인 키) 내용 |
 | `DEV_SSH_KNOWN_HOSTS` | 내 맥에서 `ssh-keyscan VPS_IP` 결과 |
 
-마지막으로 Settings → Variables에 `DEPLOY_DEV_ENABLED` = `true`를 넣으면 다음 main 머지부터 배포가 돌아요. 이 변수가 없으면 배포 워크플로는 건너뛰어요.
+마지막으로 Settings → Variables에 `DEPLOY_DEV_ENABLED` = `true`를 넣으면 다음 develop 머지부터 배포가 돌아요. 이 변수가 없으면 배포 워크플로는 건너뛰어요.
 
 ## 확인
 
