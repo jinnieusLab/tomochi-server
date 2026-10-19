@@ -33,7 +33,8 @@ class AppVersionApiTest {
 	void 최소_버전보다_낮으면_인증보다_먼저_426() throws Exception {
 		mockMvc.perform(get(PROTECTED_PATH).header("X-Tomochi-Version", "0.2.9"))
 				.andExpect(status().isUpgradeRequired())
-				.andExpect(jsonPath("$.code").value("APP_UPDATE_REQUIRED"));
+				.andExpect(jsonPath("$.code").value("APP_UPDATE_REQUIRED"))
+				.andExpect(jsonPath("$.message").value("새 버전을 받아 주세요"));
 	}
 
 	@Test
