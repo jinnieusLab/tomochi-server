@@ -7,6 +7,7 @@ import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -26,7 +27,11 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
 	@Override
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
 			AuthenticationException exception) throws IOException {
-		log.info("소셜 로그인 실패: {}", exception.getMessage());
+		// 제공자가 준 설명에는 요청 값이 섞일 수 있어서 오류 코드만 남겨요.
+		String reason = exception instanceof OAuth2AuthenticationException oauth2
+				? oauth2.getError().getErrorCode()
+				: exception.getClass().getSimpleName();
+		log.info("소셜 로그인 실패: {}", reason);
 		response.sendRedirect(UriComponentsBuilder.fromUriString(authProperties.appRedirectUri())
 				.queryParam("error", LOGIN_FAILED)
 				.build()

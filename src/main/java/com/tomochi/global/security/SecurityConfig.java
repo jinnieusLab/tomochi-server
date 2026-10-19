@@ -10,6 +10,7 @@ import com.tomochi.global.error.ErrorResponseWriter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,6 +31,7 @@ public class SecurityConfig {
 	private static final String[] PUBLIC_PATHS = {
 			LoginRequestAttributes.AUTHORIZATION_BASE_URI + "/**",
 			"/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+			"/api/v1/app/version",
 			"/error",
 	};
 
@@ -51,6 +53,8 @@ public class SecurityConfig {
 				.requestCache(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
+						// 관리 포트(8081)는 밖으로 열리지 않아서 인증 없이 둬요.
+						.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
 						.requestMatchers(PUBLIC_PATHS).permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/token", "/api/v1/auth/refresh").permitAll()
 						.anyRequest().authenticated())
