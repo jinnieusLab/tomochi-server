@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import com.tomochi.presence.domain.StatusIcon;
 import java.time.Duration;
 import java.time.Instant;
 import lombok.AccessLevel;
@@ -44,8 +45,9 @@ public class User {
 	@Column(nullable = false, length = 20)
 	private PetKind petKind;
 
+	@Enumerated(EnumType.STRING)
 	@Column(length = 20)
-	private String statusIcon;
+	private StatusIcon statusIcon;
 
 	@Column(nullable = false, length = 64)
 	private String timezone;
@@ -94,6 +96,11 @@ public class User {
 	/** 탈퇴했고 유예 기간도 지나서, 남은 데이터를 지워야 하는 계정 */
 	public boolean isPastWithdrawalGrace(Instant now) {
 		return deletedAt != null && !deletedAt.plus(WITHDRAWAL_GRACE).isAfter(now);
+	}
+
+	/** @param statusIcon null이면 아이콘 없음 */
+	public void changeStatusIcon(StatusIcon statusIcon) {
+		this.statusIcon = statusIcon;
 	}
 
 	/** 이전 코드는 이 순간부터 쓸 수 없어요. */

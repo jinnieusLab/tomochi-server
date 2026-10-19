@@ -1,5 +1,6 @@
 package com.tomochi.user.dto;
 
+import com.tomochi.presence.domain.StatusIcon;
 import com.tomochi.user.domain.PetKind;
 import com.tomochi.user.domain.User;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,7 +18,7 @@ public record UserResponse(
 		PetKind petKind,
 
 		@Schema(description = "작업 중일 때 친구에게 보이는 아이콘 코드. 고르지 않았으면 null", example = "STUDY", nullable = true)
-		String statusIcon,
+		StatusIcon statusIcon,
 
 		@Schema(description = "IANA 시간대. 하루·이번 주를 나누는 기준", example = "Asia/Seoul")
 		String timezone,

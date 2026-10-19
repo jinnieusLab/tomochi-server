@@ -55,6 +55,25 @@ public class PresenceStore {
 			return since
 			""", String.class);
 
+	/**
+	 * 모든 기기의 아이콘만 바꿔요. 해시 필드를 덮어쓰면 그 필드의 TTL이 지워져서, 남은 TTL을 읽어 다시 걸어요.
+	 */
+	private static final RedisScript<Long> CHANGE_ICON = RedisScript.of("""
+			local fields = redis.call('HGETALL', KEYS[1])
+			local changed = 0
+			for i = 1, #fields, 2 do
+			    local field, value = fields[i], fields[i + 1]
+			    local status, _, rest = string.match(value, '^([^|]*)|([^|]*)|(.*)$')
+			    local ttl = redis.call('HTTL', KEYS[1], 'FIELDS', 1, field)[1]
+			    if status and ttl > 0 then
+			        redis.call('HSET', KEYS[1], field, status .. '|' .. ARGV[1] .. '|' .. rest)
+			        redis.call('HEXPIRE', KEYS[1], ttl, 'FIELDS', 1, field)
+			        changed = changed + 1
+			    end
+			end
+			return changed
+			""", Long.class);
+
 	private final StringRedisTemplate redisTemplate;
 
 	/** @return 이 기기의 workingSince (작업 중이 아니면 null) */
@@ -63,6 +82,11 @@ public class PresenceStore {
 				sessionId, status.name(), icon != null ? icon.name() : "", String.valueOf(now.toEpochMilli()),
 				String.valueOf(TTL.toSeconds()));
 		return since == null || since.isEmpty() ? null : Instant.ofEpochMilli(Long.parseLong(since));
+	}
+
+	/** 지금 접속 중인 기기들의 아이콘을 바로 바꿔요. 다음 하트비트를 기다리지 않고 친구에게 보여요. */
+	public void changeIcon(Long userId, StatusIcon icon) {
+		redisTemplate.execute(CHANGE_ICON, List.of(KEY_PREFIX + userId), icon != null ? icon.name() : "");
 	}
 
 	/** 여러 사람의 상태를 한 번에(pipeline) 읽어요. 친구 목록을 보여줄 때 친구 수만큼 왕복하지 않게요. */

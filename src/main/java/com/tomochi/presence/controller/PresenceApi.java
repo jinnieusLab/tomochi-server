@@ -5,6 +5,8 @@ import com.tomochi.global.error.CommonErrorCode;
 import com.tomochi.global.security.AuthUser;
 import com.tomochi.global.security.CurrentUser;
 import com.tomochi.presence.dto.PresenceRequest;
+import com.tomochi.presence.dto.StatusIconRequest;
+import com.tomochi.user.error.UserErrorCode;
 import com.tomochi.presence.error.PresenceErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,4 +24,12 @@ public interface PresenceApi {
 	@ApiErrorCodes(value = PresenceErrorCode.class, codes = "INVALID_PRESENCE_STATUS")
 	@ApiErrorCodes(value = CommonErrorCode.class, codes = {"INVALID_INPUT", "MALFORMED_REQUEST"})
 	void heartbeat(@CurrentUser AuthUser user, PresenceRequest request);
+
+	@Operation(summary = "상태 아이콘 바꾸기", description = """
+			팝오버의 아이콘 트레이에서 고른 아이콘을 저장해요. 접속 중인 기기의 상태에도 바로 반영돼 친구에게 보여요.
+			`null`이면 아이콘을 지워요. 아이콘은 작업 중일 때만 친구에게 보여요.""")
+	@ApiResponse(responseCode = "204", description = "바뀜")
+	@ApiErrorCodes(value = UserErrorCode.class, codes = "USER_NOT_FOUND")
+	@ApiErrorCodes(value = CommonErrorCode.class, codes = "MALFORMED_REQUEST")
+	void changeStatusIcon(@CurrentUser AuthUser user, StatusIconRequest request);
 }
