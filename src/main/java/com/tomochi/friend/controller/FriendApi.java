@@ -55,6 +55,13 @@ public interface FriendApi {
 	@ApiErrorCodes(value = FriendErrorCode.class, codes = "FRIEND_NOT_FOUND")
 	void hide(@CurrentUser AuthUser user, @Parameter(description = "친구 사용자 id", example = "34") Long friendId);
 
+	@Operation(summary = "친구 끊기", description = """
+			양쪽 모두에서 관계가 사라져요. **상대에게 알리지 않고** 상대 목록에서 조용히 사라져요.
+			둘이 함께한 날 기록과 아직 안 받은 꾹도 지워져요. 다시 친구가 되려면 초대 코드를 다시 받아야 해요.""")
+	@ApiResponse(responseCode = "204", description = "끊음")
+	@ApiErrorCodes(value = FriendErrorCode.class, codes = "FRIEND_NOT_FOUND")
+	void unfriend(@CurrentUser AuthUser user, @Parameter(description = "친구 사용자 id", example = "34") Long friendId);
+
 	@Operation(summary = "다시 보이기", description = "숨긴 친구를 목록에 다시 보여요. 숨기지 않은 친구에게 불러도 괜찮아요.")
 	@ApiResponse(responseCode = "204", description = "보임")
 	@ApiErrorCodes(value = FriendErrorCode.class, codes = "FRIEND_NOT_FOUND")
