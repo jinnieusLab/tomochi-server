@@ -1,5 +1,7 @@
 # tomochi-server
 
+[![CI](https://github.com/jinnieusLab/tomochi-server/actions/workflows/ci.yml/badge.svg)](https://github.com/jinnieusLab/tomochi-server/actions/workflows/ci.yml)
+
 토모찌 맥 앱의 백엔드예요. 로그인, 활동 기록, 친구, 꾹, 둘이 함께한 시간 집계를 맡아요.
 
 ## 기술 스택
