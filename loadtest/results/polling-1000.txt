@@ -1,0 +1,39 @@
+# 2026-10-25, polling.js 기본값 (USERS=1000, POPOVER=1, DURATION=5m)
+# 워밍업 없음 (앱 재시작 직후). 테스트 중 process_cpu_usage 한 번 읽은 값 0.206
+
+  █ THRESHOLDS
+
+    dropped_iterations
+    ✓ 'count==0' count=0
+
+    http_req_duration{scenario:heartbeat}
+    ✓ 'p(95)<200' p(95)=9.48ms
+
+    http_req_duration{scenario:popover}
+    ✓ 'p(95)<300' p(95)=8.1ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 20002   66.669486/s
+    checks_succeeded...: 100.00% 20002 out of 20002
+    checks_failed......: 0.00%   0 out of 20002
+
+    HTTP
+    http_req_duration..............: avg=5.87ms min=1.11ms med=5.49ms max=189.23ms p(90)=7.74ms p(95)=8.88ms
+      { scenario:heartbeat }.......: avg=6.41ms min=1.41ms med=5.96ms max=189.23ms p(90)=8.16ms p(95)=9.48ms
+      { scenario:popover }.........: avg=5.33ms min=1.11ms med=5.03ms max=184.76ms p(90)=7.16ms p(95)=8.1ms
+    http_req_failed................: 0.00%  0 out of 20002
+    http_reqs......................: 20002  66.669486/s
+
+    EXECUTION
+    dropped_iterations.............: 0      0/s
+    iterations.....................: 20002  66.669486/s
+    vus............................: 0      min=0          max=9
+    vus_max........................: 100    min=100        max=100
+
+    NETWORK
+    data_received..................: 22 MB  74 kB/s
+    data_sent......................: 7.2 MB 24 kB/s
