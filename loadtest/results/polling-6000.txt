@@ -1,0 +1,49 @@
+# 2026-10-31 23:31~23:34, USERS=6000, DURATION=3m (4,000명 테스트 직후라 따로 워밍업하지 않음)
+# 실패 14,637건 모두 500. 예외: RedisConnectionFailureException ← BindException: Cannot assign requested address
+#   PresenceStore.findAll()의 executePipelined가 요청마다 Redis 전용 연결을 새로 열고 닫음 → TIME_WAIT가 쌓여 보낼 포트(32768~60999, 28,232개)가 바닥남
+# Prometheus: 500 에러가 약 1분 간격으로 몰려옴 (31:45, 32:45, 33:45). 에러 구간에 CPU 1.0까지, DB 커넥션 active 10/10·pending 32 (33:00), GC 멈춤 최대 0.22s
+#   에러가 없는 구간 CPU 0.32~0.37
+
+  █ THRESHOLDS
+
+    dropped_iterations
+    ✗ 'count==0' count=835
+
+    http_req_duration{scenario:heartbeat}
+    ✗ 'p(95)<200' p(95)=1.17s
+
+    http_req_duration{scenario:popover}
+    ✗ 'p(95)<300' p(95)=1.64s
+
+    http_req_failed
+    ✗ 'rate<0.01' rate=20.56%
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 71167  395.261207/s
+    checks_succeeded...: 79.43% 56530 out of 71167
+    checks_failed......: 20.56% 14637 out of 71167
+
+    ✗ friends 200
+      ↳  79% — ✓ 28378 / ✗ 7168
+    ✗ heartbeat 204
+      ↳  79% — ✓ 28152 / ✗ 7469
+
+    HTTP
+    http_req_duration..............: avg=176.81ms min=691µs    med=2.11ms max=2.91s p(90)=742.52ms p(95)=1.35s
+      { expected_response:true }...: avg=42.67ms  min=691µs    med=1.92ms max=2.91s p(90)=9.48ms   p(95)=116.65ms
+      { scenario:heartbeat }.......: avg=154.01ms min=1.12ms   med=2.34ms max=2.78s p(90)=625.24ms p(95)=1.17s
+      { scenario:popover }.........: avg=199.65ms min=691µs    med=1.59ms max=2.91s p(90)=868.38ms p(95)=1.64s
+    http_req_failed................: 20.56% 14637 out of 71167
+    http_reqs......................: 71167  395.261207/s
+
+    EXECUTION
+    dropped_iterations.............: 835    4.637586/s
+    iteration_duration.............: avg=177.04ms min=753.95µs med=2.26ms max=2.91s p(90)=742.7ms  p(95)=1.35s
+    iterations.....................: 71167  395.261207/s
+    vus............................: 9      min=2              max=805
+    vus_max........................: 922    min=100            max=922
+
+    NETWORK
+    data_received..................: 69 MB  384 kB/s
+    data_sent......................: 26 MB  144 kB/s
