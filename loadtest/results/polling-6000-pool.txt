@@ -1,0 +1,63 @@
+# 2026-11-10 18:00~18:03 KST, USERS=6000, DURATION=3m, Lettuce 연결 풀 적용 후 (max-active 8, max-idle 8, max-wait 150ms)
+# 워밍업: 앱 재시작 후 1,000명 1분 (17:54). 워밍업 시작 직후 5초(17:54:14~18) 동안 풀 대기 초과 195건, 그 뒤 0건
+# 포트 고갈은 사라짐: Redis 쪽 소켓 ESTABLISHED 8개, TIME_WAIT 0개, BindException 0건
+# 실패 13,197건 모두 500. 예외: RedisConnectionFailureException ← PoolException ← NoSuchElementException: Timeout waiting for idle object (150ms)
+#   실패 위치: 하트비트 8,278건 (find() 첫 번째 6,490 / 두 번째 1,788), 친구 목록 4,919건
+# Prometheus (KST):
+#   18:01:15~18:01:30 초당 400건, 500 0건, CPU 0.30, minor GC만
+#   18:01:45 첫 major GC (0.49s 멈춤)부터 에러 시작. 18:02:00~18:02:30 major GC 5초마다·최대 0.86s, CPU 1.0, 힙 140MB → 360MB, DB pending 최대 379
+#   18:02:45~18:03:00 회복, 18:03:15 작은 파도 (500 초당 21건, DB pending 47)
+#   18:00:45 시작 직후 요청 155건/초인데 CPU 0.99
+
+     scenarios: (100.00%) 2 scenarios, 1000 max VUs, 3m30s max duration (incl. graceful stop):
+              * heartbeat: 200.00 iterations/s for 3m0s (maxVUs: 50-500, exec: heartbeat, gracefulStop: 30s)
+              * popover: 200.00 iterations/s for 3m0s (maxVUs: 50-500, exec: popover, gracefulStop: 30s)
+
+WARN[0074] Insufficient VUs, reached 500 active VUs and cannot initialize more  executor=constant-arrival-rate scenario=heartbeat
+WARN[0076] Insufficient VUs, reached 500 active VUs and cannot initialize more  executor=constant-arrival-rate scenario=popover
+
+
+  █ THRESHOLDS
+
+    dropped_iterations
+    ✗ 'count==0' count=5812
+
+    http_req_duration{scenario:heartbeat}
+    ✗ 'p(95)<200' p(95)=3.05s
+
+    http_req_duration{scenario:popover}
+    ✗ 'p(95)<300' p(95)=4.68s
+
+    http_req_failed
+    ✗ 'rate<0.01' rate=19.64%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 66190  367.559236/s
+    checks_succeeded...: 80.35% 53188 out of 66190
+    checks_failed......: 19.64% 13002 out of 66190
+
+    ✗ friends 200
+      ↳  84% — ✓ 27287 / ✗ 4825
+    ✗ heartbeat 204
+      ↳  76% — ✓ 25901 / ✗ 8177
+
+    HTTP
+    http_req_duration..............: avg=611.23ms min=984µs  med=2.21ms max=9.8s  p(90)=2.64s   p(95)=3.87s
+      { expected_response:true }...: avg=111.4ms  min=984µs  med=1.71ms max=9.8s  p(90)=86.38ms p(95)=310.13ms
+      { scenario:heartbeat }.......: avg=570.43ms min=1.17ms med=3.03ms max=9.67s p(90)=2.41s   p(95)=3.05s
+      { scenario:popover }.........: avg=654.53ms min=984µs  med=1.8ms  max=9.8s  p(90)=3.45s   p(95)=4.68s
+    http_req_failed................: 19.64% 13002 out of 66190
+    http_reqs......................: 66190  367.559236/s
+
+    EXECUTION
+    dropped_iterations.............: 5812   32.274577/s
+    iteration_duration.............: avg=611.77ms min=1.11ms med=2.45ms max=9.8s  p(90)=2.64s   p(95)=3.87s
+    iterations.....................: 66190  367.559236/s
+    vus............................: 0      min=0              max=1000
+    vus_max........................: 1000   min=101            max=1000
+
+    NETWORK
+    data_received..................: 65 MB  363 kB/s
+    data_sent......................: 24 MB  134 kB/s
