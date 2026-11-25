@@ -4,6 +4,8 @@ services:
   app:
     image: ghcr.io/jinnieuslab/tomochi-server:${IMAGE_TAG:-dev}
     restart: unless-stopped
+    # 힙은 이 값의 75%(MaxRAMPercentage). 부하 테스트 4,000명에서 힙 최대 360MB였고 G1 여유를 둬요.
+    mem_limit: 1536m
     environment:
       SPRING_PROFILES_ACTIVE: dev
       DB_HOST: mysql
@@ -29,6 +31,8 @@ services:
   mysql:
     image: mysql:8.4
     restart: unless-stopped
+    # 부하 테스트에서 768MB로 커넥션 대기 0이었어요.
+    mem_limit: 1g
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
@@ -50,6 +54,7 @@ services:
   redis:
     image: redis:8-alpine
     restart: unless-stopped
+    mem_limit: 256m
     volumes:
       - redis-data:/data
     healthcheck:
@@ -61,6 +66,8 @@ services:
   nginx:
     image: nginx:1.28-alpine
     restart: unless-stopped
+    # 아래 셋은 아직 잰 값이 없어 넉넉히 잡았어요. 실서버에서 docker stats로 다시 맞춰요.
+    mem_limit: 128m
     environment:
       DOMAIN: ${DOMAIN}
     ports:
@@ -79,6 +86,7 @@ services:
   prometheus:
     image: prom/prometheus:v3.5.0
     restart: unless-stopped
+    mem_limit: 512m
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=15d
@@ -92,6 +100,7 @@ services:
   grafana:
     image: grafana/grafana:12.1.0
     restart: unless-stopped
+    mem_limit: 256m
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
@@ -106,6 +115,7 @@ services:
   certbot:
     image: certbot/certbot:v4.1.1
     restart: unless-stopped
+    mem_limit: 128m
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
