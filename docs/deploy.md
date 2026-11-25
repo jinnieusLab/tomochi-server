@@ -38,13 +38,13 @@ VPS:  Nginx(80, 443) ─▶ app:8080 ─▶ mysql:3306, redis:6379   (밖으로�
 | grafana | 256MB | 측정 전 |
 | nginx | 128MB | 측정 전 |
 | certbot | 128MB | 측정 전 |
-| **합계** | **약 3.8GB** | 4GB 서버에도 들어가요. 나머지는 OS와 여유분 |
+| **합계** | **약 3.8GB** | 상한이라 평소 사용량은 이보다 훨씬 적어요. 다만 모두 상한에 닿으면 OS·Docker 몫이 필요해서 서버 메모리는 6GB 이상을 권해요 |
 
 ## 처음 한 번 준비하기
 
 ### 1. VPS
 
-- Ubuntu 24.04, 메모리 2GB 이상 (MySQL + JVM)
+- Ubuntu 24.04, 메모리 6GB 이상 (컨테이너 상한 합계 약 3.8GB + OS 여유). 4GB 서버라면 Prometheus·Grafana 상한을 줄이거나 swap을 붙여요
 - 방화벽은 22, 80, 443만 열어요.
 - Docker Engine과 Compose 플러그인 설치: https://docs.docker.com/engine/install/ubuntu/
 - 배포용 사용자를 만들고 docker 그룹에 넣어요.
