@@ -1,0 +1,59 @@
+# 2026-11-25 18:17~18:20 KST, USERS=6000, DURATION=3m, Lettuce 풀 + find()를 파이프라인 없이 읽도록 수정한 뒤 (c2b3cc3)
+# 워밍업: 앱 재시작 후 1,000명 1분 (18:14~18:15)
+# 실패 47건, 모두 친구 목록 500. 하트비트 실패 0건
+#   예외: RedisConnectionFailureException ← PoolException ← NoSuchElementException: Timeout waiting for idle object (150ms)
+#   47건 모두 18:19:29 한 순간. 같은 시점에 초당 요청 400 → 387, 가장 느린 응답 1.5초 (약 1.5초 멈춤, 원인 미확인)
+# Prometheus (KST):
+#   18:17:30 시작 직후 CPU 0.99, DB pending 2. 그 뒤 CPU 0.26~0.50
+#   major GC 0번, minor GC 최대 42ms, 힙 100~150MB, DB pending 0
+# 앱 컨테이너 cpu.stat (컨테이너 시작 후 누적): nr_periods 3916, nr_throttled 545, throttled_usec 80059433
+
+     scenarios: (100.00%) 2 scenarios, 1000 max VUs, 3m30s max duration (incl. graceful stop):
+              * heartbeat: 200.00 iterations/s for 3m0s (maxVUs: 50-500, exec: heartbeat, gracefulStop: 30s)
+              * popover: 200.00 iterations/s for 3m0s (maxVUs: 50-500, exec: popover, gracefulStop: 30s)
+
+
+
+  █ THRESHOLDS
+
+    dropped_iterations
+    ✗ 'count==0' count=386
+
+    http_req_duration{scenario:heartbeat}
+    ✓ 'p(95)<200' p(95)=46.25ms
+
+    http_req_duration{scenario:popover}
+    ✓ 'p(95)<300' p(95)=35.32ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.06%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 71616  397.709004/s
+    checks_succeeded...: 99.93% 71569 out of 71616
+    checks_failed......: 0.06%  47 out of 71616
+
+    ✗ friends 200
+      ↳  99% — ✓ 35774 / ✗ 47
+    ✓ heartbeat 204
+
+    HTTP
+    http_req_duration..............: avg=13.35ms min=1.02ms med=1.52ms max=1.62s p(90)=6.73ms p(95)=40.65ms
+      { expected_response:true }...: avg=12.54ms min=1.02ms med=1.52ms max=1.62s p(90)=6.66ms p(95)=39.72ms
+      { scenario:heartbeat }.......: avg=14.75ms min=1.14ms med=1.6ms  max=1.62s p(90)=7.89ms p(95)=46.25ms
+      { scenario:popover }.........: avg=11.96ms min=1.02ms med=1.43ms max=1.62s p(90)=5.54ms p(95)=35.32ms
+    http_req_failed................: 0.06% 47 out of 71616
+    http_reqs......................: 71616 397.709004/s
+
+    EXECUTION
+    dropped_iterations.............: 386   2.143595/s
+    iteration_duration.............: avg=13.63ms min=1.11ms med=1.7ms  max=1.65s p(90)=7.06ms p(95)=40.9ms
+    iterations.....................: 71616 397.709004/s
+    vus............................: 2     min=0           max=209
+    vus_max........................: 280   min=100         max=280
+
+    NETWORK
+    data_received..................: 79 MB 440 kB/s
+    data_sent......................: 26 MB 145 kB/s

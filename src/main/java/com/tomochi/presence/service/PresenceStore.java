@@ -112,8 +112,15 @@ public class PresenceStore {
 		return presences;
 	}
 
+	/**
+	 * 한 사람의 상태를 {@code HGETALL} 한 번으로 읽어요.
+	 * {@link #findAll}을 거치지 않는 이유: 파이프라인은 전용 연결이 필요해 풀에서 빌려야 하는데,
+	 * 한 사람을 읽는 하트비트까지 풀을 쓰면 풀이 붐빌 때 하트비트가 대기 시간 초과로 실패해요 (docs/load-test.md).
+	 * 이렇게 읽으면 모든 요청이 같이 쓰는 공유 연결로 가서 풀을 빌리지 않아요.
+	 */
 	public Presence find(Long userId, Instant now) {
-		return findAll(List.of(userId), now).get(userId);
+		Map<String, String> fields = redisTemplate.<String, String>opsForHash().entries(KEY_PREFIX + userId);
+		return Presence.merge(devices(fields, now));
 	}
 
 	private static List<Presence.Device> devices(Map<String, String> fields, Instant now) {

@@ -80,4 +80,19 @@ class PresenceStoreTest {
 		assertThat(presences.get(userId).status()).isEqualTo(PresenceStatus.AWAY);
 		assertThat(presences.get(other)).isEqualTo(Presence.OFFLINE);
 	}
+
+	@Test
+	void 한_사람_읽기는_없는_사람이면_오프라인이다() {
+		assertThat(store.find(userId, t0)).isEqualTo(Presence.OFFLINE);
+	}
+
+	@Test
+	void 한_사람_읽기와_여러_사람_읽기는_같은_결과를_준다() {
+		store.update(userId, "macbook", PresenceStatus.RESTING, null, t0);
+		store.update(userId, "imac", PresenceStatus.WORKING, StatusIcon.DESIGN, t0.plusSeconds(10));
+		store.update(userId, "old", PresenceStatus.WORKING, StatusIcon.CODE, t0.minusSeconds(100));
+		Instant now = t0.plusSeconds(20);
+
+		assertThat(store.find(userId, now)).isEqualTo(store.findAll(List.of(userId), now).get(userId));
+	}
 }

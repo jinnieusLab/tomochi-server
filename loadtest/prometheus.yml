@@ -1,0 +1,9 @@
+# 부하 테스트는 몇 분이라 운영(15초)보다 촘촘히 읽어요.
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: tomochi-server
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["app:8081"]

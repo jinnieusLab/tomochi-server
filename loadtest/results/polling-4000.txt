@@ -1,0 +1,21 @@
+# 2026-10-31 23:14~23:17, USERS=4000, DURATION=3m
+# 워밍업: USERS=1000으로 1분 먼저 실행. 요약 일부만 남음 (THRESHOLDS는 모두 통과)
+# Prometheus (23:15~23:17:15): process_cpu_usage 0.23~0.40 (평균 약 0.32), GC 멈춤 최대 약 9ms,
+#   hikaricp pending 0, active 대부분 0, 힙 100~150MB, 최대 응답 62ms
+
+    HTTP
+    http_req_duration..............: avg=2.1ms  min=770µs    med=1.74ms max=76.31ms p(90)=2.71ms p(95)=3.39ms
+      { scenario:heartbeat }.......: avg=2.5ms  min=1.22ms   med=2.35ms max=76.31ms p(90)=3.02ms p(95)=3.78ms
+      { scenario:popover }.........: avg=1.7ms  min=770µs    med=1.53ms max=53.15ms p(90)=2.09ms p(95)=2.65ms
+    http_req_failed................: 0.00% 0 out of 48001
+    http_reqs......................: 48001 266.629314/s
+
+    EXECUTION
+    dropped_iterations.............: 0     0/s
+    iterations.....................: 48001 266.629314/s
+    vus............................: 2     min=0          max=3
+    vus_max........................: 100   min=100        max=100
+
+    NETWORK
+    data_received..................: 53 MB 296 kB/s
+    data_sent......................: 18 MB 97 kB/s

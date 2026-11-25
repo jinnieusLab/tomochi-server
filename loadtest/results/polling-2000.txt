@@ -1,0 +1,40 @@
+# 2026-10-30, USERS=2000, DURATION=3m
+# 따로 워밍업하지 않음. Grafana process_cpu_usage: 시작 30초 약 0.28, 이후 0.15~0.24 (평균 약 0.19)
+# 최대 응답: PUT /presence 0.635s, GET /friends 0.479s (http_server_requests_seconds_max), 테스트 중간에 띄엄띄엄
+
+  █ THRESHOLDS
+
+    dropped_iterations
+    ✓ 'count==0' count=0
+
+    http_req_duration{scenario:heartbeat}
+    ✓ 'p(95)<200' p(95)=8.34ms
+
+    http_req_duration{scenario:popover}
+    ✓ 'p(95)<300' p(95)=5.81ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 24001   133.315847/s
+    checks_succeeded...: 100.00% 24001 out of 24001
+    checks_failed......: 0.00%   0 out of 24001
+
+    HTTP
+    http_req_duration..............: avg=6.74ms min=1.44ms med=2.4ms  max=664.29ms p(90)=5.3ms  p(95)=7.37ms
+      { scenario:heartbeat }.......: avg=7.87ms min=1.91ms med=2.71ms max=664.29ms p(90)=5.97ms p(95)=8.34ms
+      { scenario:popover }.........: avg=5.61ms min=1.44ms med=2.03ms max=511.81ms p(90)=4.2ms  p(95)=5.81ms
+    http_req_failed................: 0.00%  0 out of 24001
+    http_reqs......................: 24001  133.315847/s
+
+    EXECUTION
+    dropped_iterations.............: 0      0/s
+    iterations.....................: 24001  133.315847/s
+    vus............................: 0      min=0          max=34
+    vus_max........................: 100    min=100        max=100
+
+    NETWORK
+    data_received..................: 27 MB  148 kB/s
+    data_sent......................: 8.7 MB 48 kB/s
