@@ -45,6 +45,10 @@ public class User {
 	@Column(nullable = false, length = 20)
 	private PetKind petKind;
 
+	/** 펫에 얹은 장식 id. 없으면 null ({@link Decoration}) */
+	@Column(length = Decoration.MAX_LENGTH)
+	private String decoration;
+
 	@Enumerated(EnumType.STRING)
 	@Column(length = 20)
 	private StatusIcon statusIcon;
@@ -114,6 +118,11 @@ public class User {
 
 	public void changePetKind(PetKind petKind) {
 		this.petKind = petKind;
+	}
+
+	/** @param decoration {@link Decoration#normalize}를 거친 값. null이면 장식 없음 */
+	public void changeDecoration(String decoration) {
+		this.decoration = decoration;
 	}
 
 	/** @param nickname {@link Nickname#normalize}를 거친 값. null이면 닉네임 없음 */

@@ -26,12 +26,13 @@ public interface UserApi {
 			| --- | --- | --- |
 			| `nickname` | 앞뒤 공백을 지우고 1~12자 (이모지 1개 = 1자), 줄바꿈·제어 문자 금지, 중복 허용 | `null` 또는 빈 문자열 |
 			| `petKind` | `CHOCO` `BUTTER` `HOBBANG` `SHERBET` `PEANUT` `HONEYCOMB` | 불가 |
+			| `decoration` | 소문자·숫자·하이픈 1~32자 (예: `winter-scarf`). 서버는 모양만 확인하고, 받은 장식인지는 앱이 정해요 | `null` 또는 빈 문자열 |
 			| `timezone` | IANA 이름 (예: `Asia/Seoul`). `+09:00`, `KST`는 안 돼요 | 불가 |
 
 			앱은 켜질 때 맥의 시간대가 `timezone`과 다르면 보내요.""")
 	@ApiResponse(responseCode = "200", description = "바뀐 뒤의 내 정보")
 	@ApiErrorCodes(value = UserErrorCode.class,
-			codes = {"INVALID_NICKNAME", "INVALID_PET_KIND", "INVALID_TIMEZONE", "USER_NOT_FOUND"})
+			codes = {"INVALID_NICKNAME", "INVALID_PET_KIND", "INVALID_DECORATION", "INVALID_TIMEZONE", "USER_NOT_FOUND"})
 	UserResponse update(@CurrentUser AuthUser user, UpdateUserRequest request);
 
 	@Operation(summary = "회원 탈퇴", description = """
