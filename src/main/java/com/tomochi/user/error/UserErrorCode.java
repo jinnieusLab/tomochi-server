@@ -8,7 +8,7 @@ public enum UserErrorCode implements ErrorCode {
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없어요"),
 	INVALID_NICKNAME(HttpStatus.BAD_REQUEST, "닉네임은 1~12자로, 줄바꿈 없이 적어 주세요"),
 	INVALID_PET_KIND(HttpStatus.BAD_REQUEST, "없는 펫이에요"),
-	INVALID_DECORATION(HttpStatus.BAD_REQUEST, "장식 id는 winter-scarf처럼 소문자·숫자·하이픈 1~32자로 보내 주세요"),
+	INVALID_DECORATION(HttpStatus.BAD_REQUEST, "장식 id는 winter-scarf처럼 소문자·숫자 1~32자로, 하이픈은 단어 사이에만 넣어 보내 주세요"),
 	INVALID_TIMEZONE(HttpStatus.BAD_REQUEST, "시간대는 Asia/Seoul 같은 IANA 이름으로 보내 주세요");
 
 	private final HttpStatus status;

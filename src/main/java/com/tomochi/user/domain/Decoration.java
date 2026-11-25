@@ -13,7 +13,8 @@ import java.util.regex.Pattern;
  *
  * <ul>
  *   <li>null 또는 빈 문자열 → 장식 없음(null)</li>
- *   <li>소문자·숫자·하이픈 1~32자 (예: {@code winter-scarf})</li>
+ *   <li>소문자·숫자 1~32자, 하이픈은 단어 사이에 하나씩만 (예: {@code winter-scarf}).
+ *       {@code -scarf}, {@code scarf-}, {@code winter--scarf}는 거절해요. 앱의 장식 id가 모두 이 모양이에요</li>
  * </ul>
  */
 public final class Decoration {
