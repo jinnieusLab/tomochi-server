@@ -63,7 +63,11 @@ public class PresenceNotifier {
 
 	private void notifyWorkStarted(Long userId, List<Long> watchers) {
 		userRepository.findById(userId).ifPresent(user -> {
-			Map<String, Object> data = Map.of("friendId", userId, "petKind", user.getPetKind());
+			// 장식은 없으면 null이라 Map.of 대신 HashMap (Map.of는 null 값을 받지 않아요)
+			Map<String, Object> data = new HashMap<>();
+			data.put("friendId", userId);
+			data.put("petKind", user.getPetKind());
+			data.put("decoration", user.getDecoration());
 			for (Long watcher : watchers) {
 				sender.send(watcher, "friend.workStarted", data);
 			}

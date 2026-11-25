@@ -13,10 +13,13 @@ public record FriendResponse(
 		String nickname,
 
 		@Schema(description = "펫 종류", example = "HOBBANG")
-		PetKind petKind
+		PetKind petKind,
+
+		@Schema(description = "펫에 얹은 장식 id. 없으면 null", example = "winter-scarf", nullable = true)
+		String decoration
 ) {
 
 	public static FriendResponse from(User user) {
-		return new FriendResponse(user.getId(), user.getNickname(), user.getPetKind());
+		return new FriendResponse(user.getId(), user.getNickname(), user.getPetKind(), user.getDecoration());
 	}
 }

@@ -19,6 +19,9 @@ public record FriendSummaryResponse(
 		@Schema(description = "펫 종류", example = "HOBBANG")
 		PetKind petKind,
 
+		@Schema(description = "펫에 얹은 장식 id. 없으면 null. 앱이 모르는 id면 장식 없이 그려요", example = "winter-scarf", nullable = true)
+		String decoration,
+
 		@Schema(description = "지금 상태")
 		PresenceView presence,
 
@@ -32,7 +35,7 @@ public record FriendSummaryResponse(
 
 	public static FriendSummaryResponse of(FriendRow row, Presence presence) {
 		Instant lastSeenAt = presence.status() == PresenceStatus.OFFLINE ? row.lastSeenAt() : null;
-		return new FriendSummaryResponse(row.id(), row.nickname(), row.petKind(), PresenceView.from(presence),
+		return new FriendSummaryResponse(row.id(), row.nickname(), row.petKind(), row.decoration(), PresenceView.from(presence),
 				lastSeenAt, row.hidden());
 	}
 

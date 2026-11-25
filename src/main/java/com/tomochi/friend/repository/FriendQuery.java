@@ -19,7 +19,7 @@ import org.springframework.stereotype.Repository;
 public class FriendQuery {
 
 	private static final String SELECT = """
-			SELECT u.id, u.nickname, u.pet_kind, u.last_seen_at, COALESCE(fs.hidden, FALSE) AS hidden
+			SELECT u.id, u.nickname, u.pet_kind, u.decoration, u.last_seen_at, COALESCE(fs.hidden, FALSE) AS hidden
 			FROM friendship f
 			JOIN users u ON u.id = IF(f.user_low = ?, f.user_high, f.user_low)
 			LEFT JOIN friend_setting fs ON fs.owner_id = ? AND fs.friend_id = u.id
@@ -32,6 +32,7 @@ public class FriendQuery {
 				rs.getLong("id"),
 				rs.getString("nickname"),
 				PetKind.valueOf(rs.getString("pet_kind")),
+				rs.getString("decoration"),
 				lastSeen != null ? lastSeen.toInstant(ZoneOffset.UTC) : null,
 				rs.getBoolean("hidden"));
 	};
@@ -61,9 +62,10 @@ public class FriendQuery {
 	}
 
 	/**
+	 * @param decoration 펫에 얹은 장식 id. 없으면 null
 	 * @param lastSeenAt 하트비트로 남긴 마지막 접속 시각 (5분 정밀도)
 	 * @param hidden     내가 목록에서 숨겼는지
 	 */
-	public record FriendRow(Long id, String nickname, PetKind petKind, Instant lastSeenAt, boolean hidden) {
+	public record FriendRow(Long id, String nickname, PetKind petKind, String decoration, Instant lastSeenAt, boolean hidden) {
 	}
 }
