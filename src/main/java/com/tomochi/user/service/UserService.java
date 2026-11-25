@@ -1,6 +1,7 @@
 package com.tomochi.user.service;
 
 import com.tomochi.global.error.BusinessException;
+import com.tomochi.user.domain.Decoration;
 import com.tomochi.user.domain.Nickname;
 import com.tomochi.user.domain.PetKind;
 import com.tomochi.user.domain.Timezone;
@@ -33,6 +34,9 @@ public class UserService {
 		}
 		if (request.hasPetKind()) {
 			user.changePetKind(PetKind.from(request.petKind()));
+		}
+		if (request.hasDecoration()) {
+			user.changeDecoration(Decoration.normalize(request.decoration()));
 		}
 		if (request.hasTimezone()) {
 			user.changeTimezone(Timezone.validate(request.timezone()));

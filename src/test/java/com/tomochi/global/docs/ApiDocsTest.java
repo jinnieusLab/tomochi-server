@@ -80,14 +80,15 @@ class ApiDocsTest {
 
 		assertThat(examples.has("INVALID_NICKNAME")).isTrue();
 		assertThat(examples.has("INVALID_PET_KIND")).isTrue();
+		assertThat(examples.has("INVALID_DECORATION")).isTrue();
 		assertThat(examples.has("INVALID_TIMEZONE")).isTrue();
 	}
 
 	@Test
-	void 내_정보_바꾸기_요청은_세_필드만_보인다() {
+	void 내_정보_바꾸기_요청은_네_필드만_보인다() {
 		JsonNode properties = schemas.at("/UpdateUserRequest/properties");
 
-		assertThat(properties.propertyNames()).containsExactlyInAnyOrder("nickname", "petKind", "timezone");
+		assertThat(properties.propertyNames()).containsExactlyInAnyOrder("nickname", "petKind", "decoration", "timezone");
 	}
 
 	@Test

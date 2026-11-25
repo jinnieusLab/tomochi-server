@@ -48,6 +48,7 @@ class WorkStartedTest {
 		Long me = newUser(PetKind.HONEYCOMB);
 		Long minji = newUser(PetKind.CHOCO);
 		befriend(me, minji);
+		jdbcTemplate.update("UPDATE users SET decoration = 'winter-scarf' WHERE id = ?", me);
 		Client minjiClient = connect(minji);
 
 		presenceService.heartbeat(new AuthUser(me, "mac"), new PresenceRequest(PresenceStatus.WORKING, null));
@@ -57,6 +58,7 @@ class WorkStartedTest {
 				.findFirst().orElseThrow();
 		assertThat(started.at("/data/friendId").asLong()).isEqualTo(me);
 		assertThat(started.at("/data/petKind").asString()).isEqualTo("HONEYCOMB");
+		assertThat(started.at("/data/decoration").asString()).isEqualTo("winter-scarf");
 		minjiClient.close();
 	}
 

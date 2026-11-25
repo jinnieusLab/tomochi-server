@@ -24,6 +24,10 @@ public class UpdateUserRequest {
 	private String petKind;
 	private boolean petKindSent;
 
+	@Schema(description = "펫에 얹은 장식 id. 빈 문자열이나 null이면 장식을 벗어요", example = "winter-scarf", nullable = true)
+	private String decoration;
+	private boolean decorationSent;
+
 	@Schema(description = "IANA 시간대 이름. 앱이 켜질 때 맥의 시간대와 다르면 보내요", example = "Asia/Seoul")
 	private String timezone;
 	private boolean timezoneSent;
@@ -52,6 +56,19 @@ public class UpdateUserRequest {
 
 	public String petKind() {
 		return petKind;
+	}
+
+	public void setDecoration(String decoration) {
+		this.decoration = decoration;
+		this.decorationSent = true;
+	}
+
+	public boolean hasDecoration() {
+		return decorationSent;
+	}
+
+	public String decoration() {
+		return decoration;
 	}
 
 	public void setTimezone(String timezone) {

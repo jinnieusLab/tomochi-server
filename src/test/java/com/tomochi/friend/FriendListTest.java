@@ -78,7 +78,21 @@ class FriendListTest {
 		JsonNode friend = list(false).get("friends").get(0);
 
 		assertThat(friend.propertyNames())
-				.containsExactlyInAnyOrder("id", "nickname", "petKind", "presence", "lastSeenAt", "hidden");
+				.containsExactlyInAnyOrder("id", "nickname", "petKind", "decoration", "presence", "lastSeenAt", "hidden");
+	}
+
+	@Test
+	void 친구가_얹은_장식을_보여준다() throws Exception {
+		Long decorated = newUser(PetKind.CHOCO);
+		Long plain = newUser(PetKind.BUTTER);
+		befriend(me, decorated);
+		befriend(me, plain);
+		jdbcTemplate.update("UPDATE users SET decoration = 'winter-scarf' WHERE id = ?", decorated);
+
+		JsonNode body = list(false);
+
+		assertThat(friend(body, decorated).get("decoration").asString()).isEqualTo("winter-scarf");
+		assertThat(friend(body, plain).get("decoration").isNull()).isTrue();
 	}
 
 	@Test

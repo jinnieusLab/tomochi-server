@@ -17,6 +17,9 @@ public record UserResponse(
 		@Schema(description = "펫 종류", example = "HOBBANG")
 		PetKind petKind,
 
+		@Schema(description = "펫에 얹은 장식 id. 없으면 null", example = "winter-scarf", nullable = true)
+		String decoration,
+
 		@Schema(description = "작업 중일 때 친구에게 보이는 아이콘 코드. 고르지 않았으면 null", example = "STUDY", nullable = true)
 		StatusIcon statusIcon,
 
@@ -35,6 +38,7 @@ public record UserResponse(
 				user.getId(),
 				user.getNickname(),
 				user.getPetKind(),
+				user.getDecoration(),
 				user.getStatusIcon(),
 				user.getTimezone(),
 				user.getInviteCode(),
