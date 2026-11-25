@@ -1,8 +1,9 @@
 # 2026-11-10 18:00~18:03 KST, USERS=6000, DURATION=3m, Lettuce 연결 풀 적용 후 (max-active 8, max-idle 8, max-wait 150ms)
 # 워밍업: 앱 재시작 후 1,000명 1분 (17:54). 워밍업 시작 직후 5초(17:54:14~18) 동안 풀 대기 초과 195건, 그 뒤 0건
 # 포트 고갈은 사라짐: Redis 쪽 소켓 ESTABLISHED 8개, TIME_WAIT 0개, BindException 0건
-# 실패 13,197건 모두 500. 예외: RedisConnectionFailureException ← PoolException ← NoSuchElementException: Timeout waiting for idle object (150ms)
-#   실패 위치: 하트비트 8,278건 (find() 첫 번째 6,490 / 두 번째 1,788), 친구 목록 4,919건
+# 측정 구간 실패 13,002건 모두 500. 예외: RedisConnectionFailureException ← PoolException ← NoSuchElementException: Timeout waiting for idle object (150ms)
+#   실패 위치: 하트비트 8,177건, 친구 목록 4,825건 (k6 결과와 같음, 로그를 09:00~09:05 UTC로 잘라 셈)
+#   처음 적은 하트비트 8,278 / 친구 4,919 (합계 13,197)는 워밍업 195건이 섞인 값이라 고침
 # Prometheus (KST):
 #   18:01:15~18:01:30 초당 400건, 500 0건, CPU 0.30, minor GC만
 #   18:01:45 첫 major GC (0.49s 멈춤)부터 에러 시작. 18:02:00~18:02:30 major GC 5초마다·최대 0.86s, CPU 1.0, 힙 140MB → 360MB, DB pending 최대 379
