@@ -23,12 +23,28 @@ VPS:  Nginx(80, 443) ─▶ app:8080 ─▶ mysql:3306, redis:6379   (밖으로�
 - **태그는 커밋 해시(`sha-1a2b3c4`)로 남겨요.** `dev` 태그는 항상 최신이고, 문제가 생기면 `IMAGE_TAG=sha-이전커밋 ./deploy.sh`로 되돌려요.
 - **레지스트리 로그인은 배포할 때만 해요.** 실행마다 새로 주는 `GITHUB_TOKEN`으로 로그인하고 바로 로그아웃해서, VPS에 오래 쓰는 토큰을 두지 않아요.
 - **비밀값은 VPS의 `deploy/.env`에만 있어요.** 레포와 Actions 로그에는 남지 않아요.
+- **컨테이너마다 메모리 상한(`mem_limit`)을 둬요.** 상한이 없으면 JVM이 `MaxRAMPercentage=75`로 호스트 메모리의 75%를 힙으로 잡아서 MySQL·Redis가 밀려나요.
+
+## 메모리 상한
+
+앱·MySQL·Redis는 [부하 테스트](load-test.md) 4,000명(워밍업 후, 에러 0) 결과를 기준으로 잡았어요. 나머지는 아직 잰 값이 없어서 넉넉히 두고, 실서버에서 `docker stats --no-stream`으로 다시 맞춰요.
+
+| 컨테이너 | 상한 | 근거 |
+| --- | --- | --- |
+| app | 1.5GB | 힙 정상 110~140MB, 장애 때도 최대 360MB. 힙은 상한의 75%(약 1.1GB)라 G1 GC 여유가 있어요 |
+| mysql | 1GB | 768MB에서 커넥션 대기 0 |
+| redis | 256MB | 256MB로 충분했어요 |
+| prometheus | 512MB | 측정 전 (보관 15일) |
+| grafana | 256MB | 측정 전 |
+| nginx | 128MB | 측정 전 |
+| certbot | 128MB | 측정 전 |
+| **합계** | **약 3.8GB** | 상한이라 평소 사용량은 이보다 훨씬 적어요. 다만 모두 상한에 닿으면 OS·Docker 몫이 필요해서 서버 메모리는 6GB 이상을 권해요 |
 
 ## 처음 한 번 준비하기
 
 ### 1. VPS
 
-- Ubuntu 24.04, 메모리 2GB 이상 (MySQL + JVM)
+- Ubuntu 24.04, 메모리 6GB 이상 (컨테이너 상한 합계 약 3.8GB + OS 여유). 4GB 서버라면 Prometheus·Grafana 상한을 줄이거나 swap을 붙여요
 - 방화벽은 22, 80, 443만 열어요.
 - Docker Engine과 Compose 플러그인 설치: https://docs.docker.com/engine/install/ubuntu/
 - 배포용 사용자를 만들고 docker 그룹에 넣어요.
